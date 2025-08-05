@@ -150,7 +150,9 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     return (
       <TemplateViewer
         template={selectedTemplate}
+        user={user}
         onBack={handleCancel}
+        onEdit={handleEdit}
       />
     );
   }

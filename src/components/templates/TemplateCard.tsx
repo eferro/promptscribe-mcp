@@ -35,8 +35,16 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
   const argumentCount = template.template_data?.arguments?.length || 0;
   const messageCount = template.template_data?.messages?.length || 0;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking on buttons or dropdown
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="menuitem"]')) {
+      return;
+    }
+    onView(template);
+  };
+
   return (
-    <Card className="template-card">
+    <Card className="template-card cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-1">
@@ -101,17 +109,18 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
           <span>{formatDate(template.updated_at)}</span>
         </div>
         
-        {!isOwner && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full mt-3"
-            onClick={() => onView(template)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View Template
-          </Button>
-        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full mt-3"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click
+            onView(template);
+          }}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          View Template
+        </Button>
       </CardContent>
     </Card>
   );

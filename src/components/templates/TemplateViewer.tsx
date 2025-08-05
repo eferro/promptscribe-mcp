@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Copy, Globe, Lock } from "lucide-react";
+import { ArrowLeft, Copy, Globe, Lock, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { User } from '@supabase/supabase-js';
 
 interface MCPTemplate {
   id: string;
@@ -17,10 +18,12 @@ interface MCPTemplate {
 
 interface TemplateViewerProps {
   template: MCPTemplate;
+  user: User;
   onBack: () => void;
+  onEdit?: (template: MCPTemplate) => void;
 }
 
-export default function TemplateViewer({ template, onBack }: TemplateViewerProps) {
+export default function TemplateViewer({ template, user, onBack, onEdit }: TemplateViewerProps) {
   const { toast } = useToast();
 
   const copyToClipboard = () => {
@@ -41,6 +44,9 @@ export default function TemplateViewer({ template, onBack }: TemplateViewerProps
     });
   };
 
+  // Check if current user owns this template
+  const isOwner = template.user_id === user.id;
+
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex items-center gap-4">
@@ -48,7 +54,13 @@ export default function TemplateViewer({ template, onBack }: TemplateViewerProps
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <h1 className="text-2xl font-bold">{template.name}</h1>
+        {isOwner && onEdit && (
+          <Button variant="outline" size="sm" onClick={() => onEdit(template)}>
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+        )}
+        <h1 className="text-2xl font-bold flex-1">{template.name}</h1>
         <Badge variant={template.is_public ? "default" : "secondary"}>
           {template.is_public ? (
             <>
