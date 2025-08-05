@@ -27,6 +27,9 @@ describe('main.tsx', () => {
     mockRootElement.id = 'root';
     
     vi.spyOn(document, 'getElementById').mockReturnValue(mockRootElement);
+    
+    // Reset the module cache to allow re-execution
+    vi.resetModules();
   });
 
   it('creates root and renders App component', async () => {
@@ -42,12 +45,16 @@ describe('main.tsx', () => {
     // Mock getElementById to return null
     vi.spyOn(document, 'getElementById').mockReturnValue(null);
     
-    // The non-null assertion (!) should cause the code to fail
-    // We need to test that the code would fail in this case
-    expect(() => {
-      const rootElement = document.getElementById('root')!;
-      mockCreateRoot(rootElement);
-    }).toThrow();
+    // Mock createRoot to throw error when called with null
+    mockCreateRoot.mockImplementation((element) => {
+      if (!element) {
+        throw new Error('Cannot read properties of null');
+      }
+      return { render: mockRender };
+    });
+    
+    // Importing main.tsx should throw an error when root element is null
+    await expect(() => import('./main.tsx')).rejects.toThrow();
   });
 
   it('uses correct root element selector', async () => {

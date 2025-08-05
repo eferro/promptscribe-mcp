@@ -191,7 +191,17 @@ describe('Dashboard', () => {
     window.confirm = vi.fn(() => false);
     
     const mockDelete = vi.fn();
+    const mockSelect = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => Promise.resolve({
+          data: [mockTemplate],
+          error: null
+        }))
+      }))
+    }));
+    
     vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect,
       delete: mockDelete
     } as any);
     

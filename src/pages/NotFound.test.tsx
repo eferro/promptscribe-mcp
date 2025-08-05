@@ -82,7 +82,8 @@ describe('NotFound', () => {
   });
 
   it('handles pathname changes correctly', () => {
-    const { rerender } = render(
+    // First render
+    render(
       <MemoryRouter initialEntries={['/first-path']}>
         <NotFound />
       </MemoryRouter>
@@ -95,7 +96,8 @@ describe('NotFound', () => {
     
     consoleSpy.mockClear();
     
-    rerender(
+    // Second render with different path
+    render(
       <MemoryRouter initialEntries={['/second-path']}>
         <NotFound />
       </MemoryRouter>

@@ -13,9 +13,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock the toast hook
+const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn()
+    toast: mockToast
   })
 }));
 
@@ -25,6 +26,7 @@ const mockOnCancel = vi.fn();
 describe('PasswordChangeForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToast.mockClear();
   });
 
   it('renders password change form correctly', () => {
@@ -36,10 +38,10 @@ describe('PasswordChangeForm', () => {
     );
     
     expect(screen.getByText('Change Your Password')).toBeInTheDocument();
-    expect(screen.getByText('Enter your new password below')).toBeInTheDocument();
+    expect(screen.getByText('Please enter your new password to complete the reset process.')).toBeInTheDocument();
     expect(screen.getByLabelText('New Password')).toBeInTheDocument();
-    expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument();
-    expect(screen.getByText('Change Password')).toBeInTheDocument();
+    expect(screen.getByLabelText('Confirm New Password')).toBeInTheDocument();
+    expect(screen.getByText('Update Password')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
@@ -52,7 +54,7 @@ describe('PasswordChangeForm', () => {
     );
     
     const newPasswordInput = screen.getByLabelText('New Password');
-    const confirmPasswordInput = screen.getByLabelText('Confirm Password');
+    const confirmPasswordInput = screen.getByLabelText('Confirm New Password');
     
     fireEvent.change(newPasswordInput, { target: { value: 'newpassword123' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'newpassword123' } });
@@ -62,9 +64,6 @@ describe('PasswordChangeForm', () => {
   });
 
   it('shows error when passwords do not match', async () => {
-    const mockToast = vi.fn();
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
-    
     render(
       <PasswordChangeForm 
         onPasswordChanged={mockOnPasswordChanged}
@@ -75,11 +74,11 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: 'password123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: 'differentpassword' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     expect(mockToast).toHaveBeenCalledWith({
       variant: "destructive",
@@ -89,9 +88,6 @@ describe('PasswordChangeForm', () => {
   });
 
   it('shows error when password is too short', async () => {
-    const mockToast = vi.fn();
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
-    
     render(
       <PasswordChangeForm 
         onPasswordChanged={mockOnPasswordChanged}
@@ -102,11 +98,11 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: '123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: '123' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     expect(mockToast).toHaveBeenCalledWith({
       variant: "destructive",
@@ -116,10 +112,8 @@ describe('PasswordChangeForm', () => {
   });
 
   it('successfully changes password', async () => {
-    const mockToast = vi.fn();
     const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
     mockUpdateUser.mockResolvedValue({ data: { user: {} }, error: null });
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
     
     render(
       <PasswordChangeForm 
@@ -131,11 +125,11 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: 'newpassword123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: 'newpassword123' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     await waitFor(() => {
       expect(mockUpdateUser).toHaveBeenCalledWith({
@@ -145,20 +139,18 @@ describe('PasswordChangeForm', () => {
     
     expect(mockToast).toHaveBeenCalledWith({
       title: "Password updated",
-      description: "Your password has been successfully changed."
+      description: "Your password has been successfully updated."
     });
     
     expect(mockOnPasswordChanged).toHaveBeenCalled();
   });
 
   it('handles password update error', async () => {
-    const mockToast = vi.fn();
     const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
     mockUpdateUser.mockResolvedValue({ 
       data: { user: null }, 
       error: { message: 'Password update failed' } 
     });
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
     
     render(
       <PasswordChangeForm 
@@ -170,11 +162,11 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: 'newpassword123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: 'newpassword123' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
@@ -188,10 +180,8 @@ describe('PasswordChangeForm', () => {
   });
 
   it('handles unexpected errors', async () => {
-    const mockToast = vi.fn();
     const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
     mockUpdateUser.mockRejectedValue(new Error('Network error'));
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
     
     render(
       <PasswordChangeForm 
@@ -203,17 +193,17 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: 'newpassword123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: 'newpassword123' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred"
+        description: "An unexpected error occurred while updating your password."
       });
     });
   });
@@ -232,14 +222,14 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: 'newpassword123' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: 'newpassword123' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
-    expect(screen.getByText('Changing Password...')).toBeInTheDocument();
-    expect(screen.getByText('Changing Password...')).toBeDisabled();
+    expect(screen.getByText('Updating Password...')).toBeInTheDocument();
+    expect(screen.getByText('Updating Password...')).toBeDisabled();
   });
 
   it('calls onCancel when cancel button is clicked', () => {
@@ -255,9 +245,6 @@ describe('PasswordChangeForm', () => {
   });
 
   it('prevents form submission with empty passwords', () => {
-    const mockToast = vi.fn();
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
-    
     render(
       <PasswordChangeForm 
         onPasswordChanged={mockOnPasswordChanged}
@@ -265,19 +252,17 @@ describe('PasswordChangeForm', () => {
       />
     );
     
-    fireEvent.click(screen.getByText('Change Password'));
+    const form = screen.getByText('Update Password').closest('form')!;
+    fireEvent.submit(form);
     
     expect(mockToast).toHaveBeenCalledWith({
       variant: "destructive",
-      title: "Password mismatch",
-      description: "The passwords you entered don't match."
+      title: "Password too short",
+      description: "Password must be at least 6 characters long."
     });
   });
 
   it('validates minimum password length boundary', () => {
-    const mockToast = vi.fn();
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({ toast: mockToast });
-    
     render(
       <PasswordChangeForm 
         onPasswordChanged={mockOnPasswordChanged}
@@ -289,11 +274,11 @@ describe('PasswordChangeForm', () => {
     fireEvent.change(screen.getByLabelText('New Password'), { 
       target: { value: '123456' } 
     });
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { 
+    fireEvent.change(screen.getByLabelText('Confirm New Password'), { 
       target: { value: '123456' } 
     });
     
-    fireEvent.click(screen.getByText('Change Password'));
+    fireEvent.click(screen.getByText('Update Password'));
     
     // Should not show password too short error
     expect(mockToast).not.toHaveBeenCalledWith({
