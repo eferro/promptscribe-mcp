@@ -53,12 +53,11 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
 
       if (userError) throw userError;
 
-      // Fetch public templates (excluding user's own)
+      // Fetch public templates (including user's own)
       const { data: publicData, error: publicError } = await supabase
         .from('prompt_templates')
         .select('*')
         .eq('is_public', true)
-        .neq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (publicError) throw publicError;
