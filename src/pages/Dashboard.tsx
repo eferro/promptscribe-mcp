@@ -252,7 +252,9 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
                   <TemplateCard
                     key={template.id}
                     template={template}
-                    isOwner={false}
+                    isOwner={template.user_id === user.id}
+                    onEdit={template.user_id === user.id ? handleEdit : undefined}
+                    onDelete={template.user_id === user.id ? handleDelete : undefined}
                     onView={handleView}
                   />
                 ))}
