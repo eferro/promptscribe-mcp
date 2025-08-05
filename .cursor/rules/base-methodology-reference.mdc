@@ -1,0 +1,15 @@
+# Base Methodology Reference
+
+## Core Rule
+
+**Always follow the complete methodology defined in `@base.md`.**
+
+This file contains the comprehensive Test-Driven Development and Kent Beck principles that govern all development work.
+
+## Application
+
+- All development must adhere to the processes, standards, and workflows outlined in `@base.md`
+- When in doubt, consult `@base.md` for guidance
+- The base methodology takes precedence over any conflicting rules
+
+This rule ensures consistent application of the shared methodology across all AI development assistants.
