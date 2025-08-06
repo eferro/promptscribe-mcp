@@ -15,6 +15,11 @@ vi.mock('./App.tsx', () => ({
   default: () => 'App Component'
 }));
 
+// Mock the ErrorBoundary component
+vi.mock('./components/ErrorBoundary.tsx', () => ({
+  ErrorBoundary: ({ children }: { children: React.ReactNode }) => children
+}));
+
 // Mock CSS import
 vi.mock('./index.css', () => ({}));
 
@@ -77,5 +82,21 @@ describe('main.tsx', () => {
     
     // Verify the order of operations
     expect(mockCreateRoot).toHaveBeenCalledBefore(mockRender);
+  });
+
+  it('wraps App component with ErrorBoundary', async () => {
+    await import('./main.tsx');
+    
+    expect(mockRender).toHaveBeenCalled();
+    
+    // Get the rendered component
+    const renderedComponent = mockRender.mock.calls[0][0];
+    
+    // Should be wrapped with ErrorBoundary (mocked as identity function)
+    // Since ErrorBoundary is mocked to return children directly, 
+    // we check that it was called with the correct structure
+    expect(renderedComponent.type.name).toBe('ErrorBoundary');
+    expect(renderedComponent.props).toHaveProperty('children');
+    expect(renderedComponent.props.children.type).toBeDefined();
   });
 });
