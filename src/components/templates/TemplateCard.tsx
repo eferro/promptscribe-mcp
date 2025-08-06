@@ -3,17 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, Eye, Globe, Lock } from "lucide-react";
-
-interface MCPTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  template_data: any;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
+import { MCPTemplate } from '@/types/template';
+import { formatDate } from '@/lib/utils';
 
 interface TemplateCardProps {
   template: MCPTemplate;
@@ -24,13 +15,6 @@ interface TemplateCardProps {
 }
 
 export default function TemplateCard({ template, isOwner, onEdit, onDelete, onView }: TemplateCardProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
 
   const argumentCount = template.template_data?.arguments?.length || 0;
   const messageCount = template.template_data?.messages?.length || 0;

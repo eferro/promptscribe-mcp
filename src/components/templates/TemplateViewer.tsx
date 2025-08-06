@@ -4,17 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Copy, Globe, Lock, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
-
-interface MCPTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  template_data: any;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
+import { MCPTemplate } from '@/types/template';
+import { formatDetailedDate } from '@/lib/utils';
 
 interface TemplateViewerProps {
   template: MCPTemplate;
@@ -34,15 +25,6 @@ export default function TemplateViewer({ template, user, onBack, onEdit }: Templ
     });
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   // Check if current user owns this template
   const isOwner = template.user_id === user.id;
@@ -93,12 +75,12 @@ export default function TemplateViewer({ template, user, onBack, onEdit }: Templ
               
               <div>
                 <h4 className="font-semibold text-sm text-muted-foreground">Created</h4>
-                <p className="text-sm mt-1">{formatDate(template.created_at)}</p>
+                <p className="text-sm mt-1">{formatDetailedDate(template.created_at)}</p>
               </div>
               
               <div>
                 <h4 className="font-semibold text-sm text-muted-foreground">Last Updated</h4>
-                <p className="text-sm mt-1">{formatDate(template.updated_at)}</p>
+                <p className="text-sm mt-1">{formatDetailedDate(template.updated_at)}</p>
               </div>
 
               <div>

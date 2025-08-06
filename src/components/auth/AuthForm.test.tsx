@@ -16,9 +16,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock the toast hook
+const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn()
+    toast: mockToast
   })
 }));
 
@@ -116,6 +117,105 @@ describe('AuthForm', () => {
     await waitFor(() => {
       const passwordInput = screen.getByPlaceholderText('Create a password');
       expect(passwordInput).toHaveAttribute('minLength', '6');
+    });
+  });
+
+  it('handles unexpected errors in password reset', async () => {
+    // Mock resetPasswordForEmail to throw an unexpected error (not supabase error)
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockRejectedValue(
+      new Error('Network failure')
+    );
+
+    render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
+
+    // Navigate to reset form
+    fireEvent.click(screen.getByText(/forgot your password/i));
+    
+    // Fill in email and submit
+    const emailInput = screen.getByRole('textbox', { name: /email/i });
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.click(screen.getByText('Send Reset Email'));
+
+    // Should show generic error toast for unexpected errors (lines 114-118)
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
+    });
+  });
+
+  it('navigates back from password reset form', async () => {
+    render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
+
+    // Navigate to reset form
+    fireEvent.click(screen.getByText(/forgot your password/i));
+    expect(screen.getByText('Send Reset Email')).toBeInTheDocument();
+
+    // Click back to sign in (lines 201-203)
+    fireEvent.click(screen.getByText('Back to sign in'));
+    
+    // Should return to sign in form - check for the specific sign in tab
+    expect(screen.getByRole('tab', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.queryByText('Send Reset Email')).not.toBeInTheDocument();
+  });
+
+  it('handles network errors in sign up', async () => {
+    // Mock signUp to throw network error
+    vi.mocked(supabase.auth.signUp).mockRejectedValue(
+      new Error('Network failure')
+    );
+
+    const user = userEvent.setup();
+    render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
+
+    // Switch to sign up tab
+    await user.click(screen.getByRole('tab', { name: /sign up/i }));
+    
+    // Fill in form and submit
+    await waitFor(async () => {
+      const emailInput = screen.getByPlaceholderText('Enter your email');
+      const passwordInput = screen.getByPlaceholderText('Create a password');
+      
+      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      fireEvent.click(screen.getByText('Create Account'));
+    });
+
+    // Should handle unexpected errors gracefully
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
+    });
+  });
+
+  it('handles network errors in sign in', async () => {
+    // Mock signInWithPassword to throw network error
+    vi.mocked(supabase.auth.signInWithPassword).mockRejectedValue(
+      new Error('Connection timeout')
+    );
+
+    render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
+    
+    // Fill in form and submit
+    const emailInput = screen.getByRole('textbox', { name: /email/i });
+    const passwordInput = screen.getByLabelText('Password');
+    
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    // Should handle network errors gracefully 
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
     });
   });
 });

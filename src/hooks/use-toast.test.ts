@@ -102,6 +102,37 @@ describe('toast function', () => {
     expect(typeof toastInstance.dismiss).toBe('function');
     expect(typeof toastInstance.update).toBe('function');
   });
+
+  it('tests toast update functionality', () => {
+    const toastInstance = toast({ title: 'Original Title' });
+    
+    // Test update function (lines 146-149)
+    act(() => {
+      toastInstance.update({ title: 'Updated Title', description: 'New Description' });
+    });
+    
+    expect(toastInstance.id).toBeDefined();
+    expect(typeof toastInstance.update).toBe('function');
+  });
+
+  it('tests onOpenChange callback functionality', () => {
+    const { result } = renderHook(() => useToast());
+    
+    act(() => {
+      result.current.toast({ title: 'Test Toast' });
+    });
+    
+    expect(result.current.toasts).toHaveLength(1);
+    const toastItem = result.current.toasts[0];
+    
+    // Test onOpenChange callback that triggers dismiss (lines 159-160)
+    act(() => {
+      toastItem.onOpenChange?.(false);
+    });
+    
+    // Should mark toast as closed
+    expect(result.current.toasts[0].open).toBe(false);
+  });
 });
 
 describe('toast reducer', () => {

@@ -8,15 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
-
-interface MCPTemplate {
-  id?: string;
-  name: string;
-  description: string | null;
-  template_data: any;
-  is_public: boolean;
-  user_id: string;
-}
+import { MCPTemplate, TemplateMessage, TemplateArgument } from '@/types/template';
 
 interface TemplateEditorProps {
   template?: MCPTemplate;
@@ -24,16 +16,6 @@ interface TemplateEditorProps {
   onCancel: () => void;
 }
 
-interface TemplateArgument {
-  name: string;
-  description: string;
-  required: boolean;
-}
-
-interface TemplateMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
 
 export default function TemplateEditor({ template, onSave, onCancel }: TemplateEditorProps) {
   const [name, setName] = useState(template?.name || '');

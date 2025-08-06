@@ -25,9 +25,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock the toast hook
+const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn()
+    toast: mockToast
   })
 }));
 
@@ -250,5 +251,100 @@ describe('Dashboard', () => {
     // During initial render, loading skeleton should be visible
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('handles delete template errors', async () => {
+    // Mock successful initial load
+    const mockSelect = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => Promise.resolve({
+          data: [{
+            id: 'template-1',
+            name: 'Test Template',
+            description: 'Test Description',
+            template_data: { messages: [{ role: 'user', content: 'test' }] },
+            is_public: false,
+            user_id: mockUser.id
+          }],
+          error: null
+        }))
+      }))
+    }));
+
+    // Mock delete to throw error (lines 111-116)
+    const mockDelete = vi.fn(() => ({
+      eq: vi.fn(() => Promise.reject(new Error('Database connection failed')))
+    }));
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect,
+      delete: mockDelete
+    } as any);
+
+    // Mock window.confirm to return true
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn(() => true);
+
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+
+    // Wait for templates to load, then try to delete
+    await waitFor(() => {
+      const deleteButton = screen.getByText('Delete');
+      fireEvent.click(deleteButton);
+    });
+
+    // Should show error toast for failed delete (lines 111-116)
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete template"
+      });
+    });
+
+    // Restore original confirm
+    window.confirm = originalConfirm;
+  });
+
+  it('handles template fetch errors on initialization', async () => {
+    // Mock select to throw error during initial fetch
+    const mockSelect = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => Promise.reject(new Error('Network timeout')))
+      }))
+    }));
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect,
+      delete: vi.fn()
+    } as any);
+
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+
+    // Should show error toast for failed template fetch
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load templates"
+      });
+    });
+  });
+
+  it('handles save action correctly', async () => {
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    
+    // Navigate to editor
+    fireEvent.click(screen.getByText('New Template'));
+    expect(screen.getByTestId('template-editor')).toBeInTheDocument();
+    
+    // Trigger save (lines 120-122)
+    fireEvent.click(screen.getByText('Save'));
+    
+    // Should return to dashboard and refetch templates
+    await waitFor(() => {
+      expect(screen.queryByTestId('template-editor')).not.toBeInTheDocument();
+      expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
+    });
   });
 });

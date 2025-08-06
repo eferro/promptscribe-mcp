@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import Index from './Index';
@@ -387,5 +387,87 @@ describe('Index', () => {
     // This test verifies that state updates don't happen on unmounted component
     // Current implementation will fail this (no cleanup protection)
     expect(true).toBe(true); // Placeholder - real test needs component state inspection
+  });
+
+  it('handles auth initialization errors', async () => {
+    // Mock getSession to throw error (lines 30-34)
+    mockGetSession.mockRejectedValue(new Error('Auth service unavailable'));
+
+    // Mock console.error to verify error logging
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <IndexWrapper>
+        <Index />
+      </IndexWrapper>
+    );
+
+    // Should log auth initialization error and still set loading to false
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Auth initialization error:',
+        expect.any(Error)
+      );
+    });
+
+    // Should show auth form even after initialization error
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-form')).toBeInTheDocument();
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('handles auth success callback correctly', async () => {
+    render(
+      <IndexWrapper>
+        <Index />
+      </IndexWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-form')).toBeInTheDocument();
+    });
+
+    // Find and click the auth success button (line 77 - handleAuthSuccess)  
+    const successButton = screen.getByText('Sign In Success');
+    act(() => {
+      fireEvent.click(successButton);
+    });
+
+    // handleAuthSuccess is empty but should not throw errors
+    expect(screen.getByTestId('auth-form')).toBeInTheDocument();
+  });
+
+  it('handles supabase error during getSession', async () => {
+    // Mock getSession to return a supabase error
+    mockGetSession.mockResolvedValue({ 
+      data: { session: null }, 
+      error: { message: 'Invalid refresh token', code: '401' }
+    });
+
+    // Mock console.error to verify error logging
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <IndexWrapper>
+        <Index />
+      </IndexWrapper>
+    );
+
+    // Should log the supabase error and handle gracefully
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Auth initialization error:',
+        expect.objectContaining({ message: 'Invalid refresh token' })
+      );
+    });
+
+    // Should still show auth form
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-form')).toBeInTheDocument();
+    });
+
+    consoleSpy.mockRestore();
   });
 });

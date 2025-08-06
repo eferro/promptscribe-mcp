@@ -9,17 +9,7 @@ import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";
 import TemplateViewer from "@/components/templates/TemplateViewer";
 import { User } from '@supabase/supabase-js';
-
-interface MCPTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  template_data: any;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
+import { MCPTemplate } from '@/types/template';
 
 interface DashboardProps {
   user: User;
