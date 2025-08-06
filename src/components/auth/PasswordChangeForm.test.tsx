@@ -113,7 +113,19 @@ describe('PasswordChangeForm', () => {
 
   it('successfully changes password', async () => {
     const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
-    mockUpdateUser.mockResolvedValue({ data: { user: {} }, error: null });
+    mockUpdateUser.mockResolvedValue({ 
+      data: { 
+        user: {
+          id: 'user-123',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: '2023-01-01T00:00:00Z',
+          email: 'test@example.com'
+        } 
+      }, 
+      error: null 
+    });
     
     render(
       <PasswordChangeForm 
@@ -149,7 +161,9 @@ describe('PasswordChangeForm', () => {
     const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
     mockUpdateUser.mockResolvedValue({ 
       data: { user: null }, 
-      error: { message: 'Password update failed' } 
+      error: { 
+        message: 'Password update failed'
+      } as any
     });
     
     render(

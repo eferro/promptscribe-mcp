@@ -46,11 +46,8 @@ describe('main.tsx', () => {
     vi.spyOn(document, 'getElementById').mockReturnValue(null);
     
     // Mock createRoot to throw error when called with null
-    mockCreateRoot.mockImplementation((element) => {
-      if (!element) {
-        throw new Error('Cannot read properties of null');
-      }
-      return { render: mockRender };
+    mockCreateRoot.mockImplementation(() => {
+      throw new Error('Cannot read properties of null');
     });
     
     // Importing main.tsx should throw an error when root element is null

@@ -35,7 +35,7 @@ describe('Supabase Client', () => {
     expect(typeof supabase.from).toBe('function');
     
     // Test that from returns an object with query methods
-    const query = supabase.from('test_table');
+    const query = supabase.from('prompt_templates');
     expect(query.select).toBeDefined();
     expect(query.insert).toBeDefined();
     expect(query.update).toBeDefined();

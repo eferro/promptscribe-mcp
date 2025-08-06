@@ -63,7 +63,11 @@ vi.mock('@/components/templates/TemplateCard', () => ({
 
 const mockUser = {
   id: 'user-123',
-  email: 'test@example.com'
+  email: 'test@example.com',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: '2023-01-01T00:00:00Z'
 };
 
 const mockTemplate = {
