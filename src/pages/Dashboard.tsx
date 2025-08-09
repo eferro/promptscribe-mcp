@@ -8,6 +8,7 @@ import { Plus, Search, LogOut } from "lucide-react";
 import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";
 import TemplateViewer from "@/components/templates/TemplateViewer";
+import DeleteConfirmDialog from "@/components/templates/DeleteConfirmDialog";
 import { User } from '@supabase/supabase-js';
 import { MCPTemplate } from '@/types/template';
 
@@ -25,6 +26,8 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [selectedTemplate, setSelectedTemplate] = useState<MCPTemplate | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<MCPTemplate | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,14 +83,19 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     setViewMode('viewer');
   };
 
-  const handleDelete = async (template: MCPTemplate) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
+  const handleDelete = (template: MCPTemplate) => {
+    setTemplateToDelete(template);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!templateToDelete) return;
 
     try {
       const { error } = await supabase
         .from('prompt_templates')
         .delete()
-        .eq('id', template.id);
+        .eq('id', templateToDelete.id);
 
       if (error) throw error;
 
@@ -103,6 +111,9 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
         title: "Error",
         description: "Failed to delete template"
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
     }
   };
 
@@ -261,6 +272,13 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
           </TabsContent>
         </Tabs>
       </main>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        template={templateToDelete}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

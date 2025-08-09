@@ -173,28 +173,41 @@ describe('Dashboard', () => {
   });
 
   it('handles template deletion with confirmation', async () => {
-    // Mock window.confirm
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => true);
+    const mockDelete = vi.fn(() => Promise.resolve({ error: null }));
+    const mockSelect = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => Promise.resolve({
+          data: [mockTemplate],
+          error: null
+        }))
+      }))
+    }));
+    
+    vi.mocked(supabase.from).mockReturnValue({
+      select: mockSelect,
+      delete: mockDelete
+    } as any);
     
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
     
+    // Click the delete button to open the dialog
     await waitFor(() => {
       const deleteButton = screen.getByText('Delete');
       fireEvent.click(deleteButton);
     });
     
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this template?');
+    // Wait for the dialog to appear and confirm deletion
+    await waitFor(() => {
+      const confirmButton = screen.getByRole('button', { name: 'Delete Template' });
+      expect(confirmButton).toBeInTheDocument();
+      fireEvent.click(confirmButton);
+    });
     
-    // Restore original confirm
-    window.confirm = originalConfirm;
+    // Verify delete was called
+    expect(mockDelete).toHaveBeenCalled();
   });
 
   it('cancels template deletion when user declines confirmation', async () => {
-    // Mock window.confirm to return false
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => false);
-    
     const mockDelete = vi.fn();
     const mockSelect = vi.fn(() => ({
       eq: vi.fn(() => ({
@@ -212,16 +225,21 @@ describe('Dashboard', () => {
     
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
     
+    // Click the delete button to open the dialog
     await waitFor(() => {
       const deleteButton = screen.getByText('Delete');
       fireEvent.click(deleteButton);
     });
     
-    expect(window.confirm).toHaveBeenCalled();
-    expect(mockDelete).not.toHaveBeenCalled();
+    // Wait for the dialog to appear and cancel
+    await waitFor(() => {
+      const cancelButton = screen.getByText('Cancel');
+      expect(cancelButton).toBeInTheDocument();
+      fireEvent.click(cancelButton);
+    });
     
-    // Restore original confirm
-    window.confirm = originalConfirm;
+    // Verify delete was not called
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 
   it('handles sign out', () => {
@@ -281,16 +299,19 @@ describe('Dashboard', () => {
       delete: mockDelete
     } as any);
 
-    // Mock window.confirm to return true
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => true);
-
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
 
     // Wait for templates to load, then try to delete
     await waitFor(() => {
       const deleteButton = screen.getByText('Delete');
       fireEvent.click(deleteButton);
+    });
+
+    // Wait for the dialog to appear and confirm deletion
+    await waitFor(() => {
+      const confirmButton = screen.getByRole('button', { name: 'Delete Template' });
+      expect(confirmButton).toBeInTheDocument();
+      fireEvent.click(confirmButton);
     });
 
     // Should show error toast for failed delete (lines 111-116)
@@ -301,9 +322,6 @@ describe('Dashboard', () => {
         description: "Failed to delete template"
       });
     });
-
-    // Restore original confirm
-    window.confirm = originalConfirm;
   });
 
   it('handles template fetch errors on initialization', async () => {
