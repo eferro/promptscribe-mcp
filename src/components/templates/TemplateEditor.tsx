@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
-import { MCPTemplate, TemplateMessage, TemplateArgument } from '@/types/template';
+import { MCPTemplate, TemplateMessage, TemplateArgument, TemplateData } from '@/types/template';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 
 interface TemplateEditorProps {
@@ -25,12 +25,12 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
   const [isPublic, setIsPublic] = useState(template?.is_public || false);
   
   // Extract arguments and messages from template data
-  const templateData = template?.template_data || {};
+  const initialData: TemplateData = (template?.template_data ?? {}) as TemplateData;
   const [arguments_, setArguments] = useState<TemplateArgument[]>(
-    templateData.arguments || []
+    initialData.arguments ?? []
   );
   const [messages, setMessages] = useState<TemplateMessage[]>(
-    templateData.messages || [{ role: 'user', content: '{{prompt}}' }]
+    initialData.messages ?? [{ role: 'user', content: '{{prompt}}' }]
   );
   
   const [loading, setLoading] = useState(false);
@@ -109,9 +109,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
       }
 
       // Build the template data object
-      const templateData = {
-        name: name.trim(),
-        description: description.trim() || "",
+      const templateData: TemplateData = {
         arguments: arguments_,
         messages: messages
       };
@@ -119,7 +117,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
       const templatePayload = {
         name: name.trim(),
         description: description.trim() || null,
-        template_data: templateData as any,
+        template_data: templateData,
         is_public: isPublic,
         user_id: user.id
       };

@@ -7,8 +7,14 @@ const mockTemplate = {
   name: 'Test Template',
   description: 'A test template description',
   template_data: {
-    arguments: [{ name: 'arg1' }, { name: 'arg2' }],
-    messages: [{ role: 'user', content: 'test' }, { role: 'assistant', content: 'response' }]
+    arguments: [
+      { name: 'arg1', description: '', required: false },
+      { name: 'arg2', description: '', required: false }
+    ],
+    messages: [
+      { role: 'user', content: 'test' },
+      { role: 'assistant', content: 'response' }
+    ]
   },
   is_public: true,
   created_at: '2023-01-01T00:00:00Z',

@@ -75,7 +75,7 @@ const mockTemplate = {
   id: 'template-1',
   name: 'Test Template',
   description: 'A test template',
-  template_data: {},
+  template_data: { arguments: [], messages: [] },
   is_public: true,
   created_at: '2023-01-01',
   updated_at: '2023-01-01',
@@ -280,7 +280,7 @@ describe('Dashboard', () => {
             id: 'template-1',
             name: 'Test Template',
             description: 'Test Description',
-            template_data: { messages: [{ role: 'user', content: 'test' }] },
+            template_data: { arguments: [], messages: [{ role: 'user', content: 'test' }] },
             is_public: false,
             user_id: mockUser.id
           }],
