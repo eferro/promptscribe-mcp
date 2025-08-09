@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from "@/integrations/supabase/client";
+import { getSession, onAuthStateChange, signOut } from "@/services/authService";
 import AuthForm from "@/components/auth/AuthForm";
 import Dashboard from "@/pages/Dashboard";
 import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
@@ -17,7 +17,7 @@ const Index = () => {
     const initializeAuth = async () => {
       try {
         // Get initial session first
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await getSession();
         
         if (error) throw error;
         
@@ -48,7 +48,7 @@ const Index = () => {
     }
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = onAuthStateChange(
       (event, session) => {
         if (isMounted) {
           setSession(session);
@@ -77,7 +77,7 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     // Auth state will be updated automatically via the listener
   };
 
@@ -89,7 +89,7 @@ const Index = () => {
   const handlePasswordChangeCancel = () => {
     setShowPasswordChange(false);
     // Sign out the user if they cancel password change
-    supabase.auth.signOut();
+    signOut();
   };
 
   if (loading) {

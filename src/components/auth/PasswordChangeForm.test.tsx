@@ -1,15 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PasswordChangeForm from './PasswordChangeForm';
-import { supabase } from '@/integrations/supabase/client';
+import { updatePassword } from '@/services/authService';
 
-// Mock the supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      updateUser: vi.fn(),
-    }
-  }
+vi.mock('@/services/authService', () => ({
+  updatePassword: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -112,7 +107,7 @@ describe('PasswordChangeForm', () => {
   });
 
   it('successfully changes password', async () => {
-    const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
+    const mockUpdateUser = vi.mocked(updatePassword);
     mockUpdateUser.mockResolvedValue({ 
       data: { 
         user: {
@@ -144,9 +139,7 @@ describe('PasswordChangeForm', () => {
     fireEvent.click(screen.getByText('Update Password'));
     
     await waitFor(() => {
-      expect(mockUpdateUser).toHaveBeenCalledWith({
-        password: 'newpassword123'
-      });
+      expect(mockUpdateUser).toHaveBeenCalledWith('newpassword123');
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -158,7 +151,7 @@ describe('PasswordChangeForm', () => {
   });
 
   it('handles password update error', async () => {
-    const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
+    const mockUpdateUser = vi.mocked(updatePassword);
     mockUpdateUser.mockResolvedValue({ 
       data: { user: null }, 
       error: { 
@@ -194,7 +187,7 @@ describe('PasswordChangeForm', () => {
   });
 
   it('handles unexpected errors', async () => {
-    const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
+    const mockUpdateUser = vi.mocked(updatePassword);
     mockUpdateUser.mockRejectedValue(new Error('Network error'));
     
     render(
@@ -223,7 +216,7 @@ describe('PasswordChangeForm', () => {
   });
 
   it('disables form during loading', async () => {
-    const mockUpdateUser = vi.mocked(supabase.auth.updateUser);
+    const mockUpdateUser = vi.mocked(updatePassword);
     mockUpdateUser.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
     
     render(

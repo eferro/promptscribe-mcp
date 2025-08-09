@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { signUp, signIn, resetPassword } from "@/services/authService";
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -26,13 +26,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
-      });
+      const { error } = await signUp(email, password, redirectUrl);
 
       if (error) {
         toast({
@@ -62,10 +56,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { error } = await signIn(email, password);
 
       if (error) {
         toast({
@@ -92,9 +83,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/`
-      });
+      const { error } = await resetPassword(resetEmail, `${window.location.origin}/`);
 
       if (error) {
         toast({

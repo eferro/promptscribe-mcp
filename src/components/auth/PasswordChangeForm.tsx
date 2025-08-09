@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { updatePassword } from "@/services/authService";
 import { Lock } from "lucide-react";
 
 interface PasswordChangeFormProps {
@@ -42,9 +42,7 @@ export default function PasswordChangeForm({ onPasswordChanged, onCancel }: Pass
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      const { error } = await updatePassword(newPassword);
 
       if (error) {
         toast({

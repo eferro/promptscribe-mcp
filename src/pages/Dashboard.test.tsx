@@ -1,27 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from '@/services/templateService';
 
-// Mock the supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          order: vi.fn(() => ({
-            data: [],
-            error: null
-          }))
-        }))
-      })),
-      delete: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          error: null
-        }))
-      }))
-    }))
-  }
+vi.mock('@/services/templateService', () => ({
+  fetchUserTemplates: vi.fn(),
+  fetchPublicTemplates: vi.fn(),
+  deleteTemplate: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -87,22 +72,9 @@ const mockOnSignOut = vi.fn();
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock the supabase query chain
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        order: vi.fn(() => Promise.resolve({
-          data: [mockTemplate],
-          error: null
-        }))
-      }))
-    }));
-    
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      delete: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null }))
-      }))
-    } as any);
+    vi.mocked(fetchUserTemplates).mockResolvedValue({ data: [mockTemplate], error: null });
+    vi.mocked(fetchPublicTemplates).mockResolvedValue({ data: [mockTemplate], error: null });
+    vi.mocked(deleteTemplate).mockResolvedValue({ error: null });
   });
 
   it('renders dashboard header with user email', async () => {
@@ -173,73 +145,35 @@ describe('Dashboard', () => {
   });
 
   it('handles template deletion with confirmation', async () => {
-    const mockDelete = vi.fn(() => Promise.resolve({ error: null }));
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        order: vi.fn(() => Promise.resolve({
-          data: [mockTemplate],
-          error: null
-        }))
-      }))
-    }));
-    
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      delete: mockDelete
-    } as any);
-    
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
-    
-    // Click the delete button to open the dialog
+
     await waitFor(() => {
       const deleteButton = screen.getByText('Delete');
       fireEvent.click(deleteButton);
     });
-    
-    // Wait for the dialog to appear and confirm deletion
+
     await waitFor(() => {
       const confirmButton = screen.getByRole('button', { name: 'Delete Template' });
-      expect(confirmButton).toBeInTheDocument();
       fireEvent.click(confirmButton);
     });
-    
-    // Verify delete was called
-    expect(mockDelete).toHaveBeenCalled();
+
+    expect(deleteTemplate).toHaveBeenCalled();
   });
 
   it('cancels template deletion when user declines confirmation', async () => {
-    const mockDelete = vi.fn();
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        order: vi.fn(() => Promise.resolve({
-          data: [mockTemplate],
-          error: null
-        }))
-      }))
-    }));
-    
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      delete: mockDelete
-    } as any);
-    
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
-    
-    // Click the delete button to open the dialog
+
     await waitFor(() => {
       const deleteButton = screen.getByText('Delete');
       fireEvent.click(deleteButton);
     });
-    
-    // Wait for the dialog to appear and cancel
+
     await waitFor(() => {
       const cancelButton = screen.getByText('Cancel');
-      expect(cancelButton).toBeInTheDocument();
       fireEvent.click(cancelButton);
     });
-    
-    // Verify delete was not called
-    expect(mockDelete).not.toHaveBeenCalled();
+
+    expect(deleteTemplate).not.toHaveBeenCalled();
   });
 
   it('handles sign out', () => {
@@ -271,83 +205,6 @@ describe('Dashboard', () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it('handles delete template errors', async () => {
-    // Mock successful initial load
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        order: vi.fn(() => Promise.resolve({
-          data: [{
-            id: 'template-1',
-            name: 'Test Template',
-            description: 'Test Description',
-            template_data: { arguments: [], messages: [{ role: 'user', content: 'test' }] },
-            is_public: false,
-            user_id: mockUser.id
-          }],
-          error: null
-        }))
-      }))
-    }));
-
-    // Mock delete to throw error (lines 111-116)
-    const mockDelete = vi.fn(() => ({
-      eq: vi.fn(() => Promise.reject(new Error('Database connection failed')))
-    }));
-
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      delete: mockDelete
-    } as any);
-
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
-
-    // Wait for templates to load, then try to delete
-    await waitFor(() => {
-      const deleteButton = screen.getByText('Delete');
-      fireEvent.click(deleteButton);
-    });
-
-    // Wait for the dialog to appear and confirm deletion
-    await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: 'Delete Template' });
-      expect(confirmButton).toBeInTheDocument();
-      fireEvent.click(confirmButton);
-    });
-
-    // Should show error toast for failed delete (lines 111-116)
-    await waitFor(() => {
-      expect(mockToast).toHaveBeenCalledWith({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete template"
-      });
-    });
-  });
-
-  it('handles template fetch errors on initialization', async () => {
-    // Mock select to throw error during initial fetch
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        order: vi.fn(() => Promise.reject(new Error('Network timeout')))
-      }))
-    }));
-
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      delete: vi.fn()
-    } as any);
-
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
-
-    // Should show error toast for failed template fetch
-    await waitFor(() => {
-      expect(mockToast).toHaveBeenCalledWith({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load templates"
-      });
-    });
-  });
 
   it('handles save action correctly', async () => {
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
@@ -363,6 +220,43 @@ describe('Dashboard', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('template-editor')).not.toBeInTheDocument();
       expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
+    });
+  });
+  it('handles delete template errors', async () => {
+    vi.mocked(deleteTemplate).mockResolvedValue({ error: new Error('Database connection failed') });
+
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+
+    await waitFor(() => {
+      const deleteButton = screen.getByText('Delete');
+      fireEvent.click(deleteButton);
+    });
+
+    await waitFor(() => {
+      const confirmButton = screen.getByRole('button', { name: 'Delete Template' });
+      fireEvent.click(confirmButton);
+    });
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete template",
+      });
+    });
+  });
+
+  it('handles template fetch errors on initialization', async () => {
+    vi.mocked(fetchUserTemplates).mockResolvedValue({ data: null, error: new Error('Network timeout') });
+
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load templates",
+      });
     });
   });
 });

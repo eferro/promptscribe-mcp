@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getUser } from "@/services/authService";
+import { saveTemplate } from "@/services/templateService";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import { MCPTemplate, TemplateMessage, TemplateArgument, TemplateData } from '@/types/template';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
@@ -98,7 +99,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUser();
       if (!user) {
         toast({
           variant: "destructive",
@@ -122,21 +123,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
         user_id: user.id
       };
 
-      let error;
-      if (template?.id) {
-        // Update existing template
-        const { error: updateError } = await supabase
-          .from('prompt_templates')
-          .update(templatePayload)
-          .eq('id', template.id);
-        error = updateError;
-      } else {
-        // Create new template
-        const { error: insertError } = await supabase
-          .from('prompt_templates')
-          .insert([templatePayload]);
-        error = insertError;
-      }
+      const { error } = await saveTemplate(templatePayload, template?.id);
 
       if (error) {
         toast({
