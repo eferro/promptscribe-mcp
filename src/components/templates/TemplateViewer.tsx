@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Copy, Globe, Lock, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
-import { MCPTemplate } from '@/types/template';
+import { MCPTemplate, TemplateArgument, TemplateMessage } from '@/types/template';
 import { formatDetailedDate } from '@/lib/utils';
 import { useState } from 'react';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
@@ -121,7 +121,7 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {template.template_data.arguments.map((arg: any, index: number) => (
+                  {template.template_data.arguments!.map((arg: TemplateArgument, index: number) => (
                     <div key={index} className="p-2 bg-muted rounded text-sm">
                       <div className="font-semibold">{arg.name}</div>
                       {arg.description && (
@@ -165,7 +165,7 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {template.template_data.messages.map((message: any, index: number) => (
+                  {template.template_data.messages!.map((message: TemplateMessage, index: number) => (
                     <div key={index} className="p-3 bg-muted rounded">
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">
