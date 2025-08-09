@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
+import { handleRequest } from '@/api/supabaseApi';
 import {
   signUp,
   signIn,
@@ -25,6 +26,9 @@ vi.mock('@/integrations/supabase/client', () => ({
     },
   },
 }));
+vi.mock('@/api/supabaseApi', () => ({
+  handleRequest: vi.fn(),
+}));
 
 describe('authService', () => {
   beforeEach(() => {
@@ -33,48 +37,63 @@ describe('authService', () => {
 
   it('signUp delegates to supabase', async () => {
     const result = { data: {}, error: null } as any;
-    vi.mocked(supabase.auth.signUp).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.signUp).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signUp('a@b.com', 'pass', 'redirect');
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: 'a@b.com',
       password: 'pass',
       options: { emailRedirectTo: 'redirect' },
     });
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Sign up failed');
     expect(response).toBe(result);
   });
 
   it('signIn delegates to supabase', async () => {
     const result = { data: {}, error: null } as any;
-    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.signInWithPassword).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signIn('a@b.com', 'pass');
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
       email: 'a@b.com',
       password: 'pass',
     });
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Sign in failed');
     expect(response).toBe(result);
   });
 
   it('resetPassword delegates to supabase', async () => {
     const result = { data: {}, error: null } as any;
-    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await resetPassword('a@b.com', 'redir');
     expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('a@b.com', { redirectTo: 'redir' });
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Reset failed');
     expect(response).toBe(result);
   });
 
   it('updatePassword delegates to supabase', async () => {
     const result = { data: {}, error: null } as any;
-    vi.mocked(supabase.auth.updateUser).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.updateUser).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await updatePassword('newpass');
     expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpass' });
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Password update failed');
     expect(response).toBe(result);
   });
 
   it('getSession delegates to supabase', async () => {
     const result = { data: { session: null }, error: null } as any;
-    vi.mocked(supabase.auth.getSession).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.getSession).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await getSession();
     expect(supabase.auth.getSession).toHaveBeenCalled();
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Failed to get session');
     expect(response).toBe(result);
   });
 
@@ -90,17 +109,23 @@ describe('authService', () => {
 
   it('signOut delegates to supabase', async () => {
     const result = { error: null } as any;
-    vi.mocked(supabase.auth.signOut).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.signOut).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signOut();
     expect(supabase.auth.signOut).toHaveBeenCalled();
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Sign out failed');
     expect(response).toBe(result);
   });
 
   it('getUser delegates to supabase', async () => {
     const result = { data: { user: null }, error: null } as any;
-    vi.mocked(supabase.auth.getUser).mockResolvedValue(result);
+    const promise = Promise.resolve(result);
+    vi.mocked(supabase.auth.getUser).mockReturnValue(promise as any);
+    vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await getUser();
     expect(supabase.auth.getUser).toHaveBeenCalled();
+    expect(handleRequest).toHaveBeenCalledWith(promise, 'Failed to get user');
     expect(response).toBe(result);
   });
 });
