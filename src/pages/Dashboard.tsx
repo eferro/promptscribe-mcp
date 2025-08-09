@@ -104,6 +104,12 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
         description: "Template deleted successfully"
       });
       
+      // Navigate back to dashboard if we're currently viewing/editing the deleted template
+      if (selectedTemplate?.id === templateToDelete.id) {
+        setViewMode('dashboard');
+        setSelectedTemplate(null);
+      }
+      
       fetchTemplates();
     } catch (error: any) {
       toast({
@@ -143,6 +149,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
         template={selectedTemplate || undefined}
         onSave={handleSave}
         onCancel={handleCancel}
+        onDelete={handleDelete}
       />
     );
   }
@@ -154,6 +161,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
         user={user}
         onBack={handleCancel}
         onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     );
   }

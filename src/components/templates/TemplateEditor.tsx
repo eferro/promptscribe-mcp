@@ -9,15 +9,17 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import { MCPTemplate, TemplateMessage, TemplateArgument } from '@/types/template';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 
 interface TemplateEditorProps {
   template?: MCPTemplate;
   onSave: () => void;
   onCancel: () => void;
+  onDelete?: (template: MCPTemplate) => void;
 }
 
 
-export default function TemplateEditor({ template, onSave, onCancel }: TemplateEditorProps) {
+export default function TemplateEditor({ template, onSave, onCancel, onDelete }: TemplateEditorProps) {
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
   const [isPublic, setIsPublic] = useState(template?.is_public || false);
@@ -32,6 +34,7 @@ export default function TemplateEditor({ template, onSave, onCancel }: TemplateE
   );
   
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const addArgument = () => {
@@ -60,6 +63,17 @@ export default function TemplateEditor({ template, onSave, onCancel }: TemplateE
     const updated = [...messages];
     updated[index] = { ...updated[index], [field]: value };
     setMessages(updated);
+  };
+
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (onDelete && template) {
+      onDelete(template);
+    }
+    setDeleteDialogOpen(false);
   };
 
   const handleSave = async () => {
@@ -157,7 +171,13 @@ export default function TemplateEditor({ template, onSave, onCancel }: TemplateE
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <h1 className="text-2xl font-bold">
+        {template?.id && onDelete && (
+          <Button variant="outline" size="sm" onClick={handleDelete}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
+        )}
+        <h1 className="text-2xl font-bold flex-1">
           {template?.id ? 'Edit Template' : 'New Template'}
         </h1>
       </div>
@@ -323,6 +343,13 @@ export default function TemplateEditor({ template, onSave, onCancel }: TemplateE
           {loading ? 'Saving...' : 'Save Template'}
         </Button>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        template={template || null}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

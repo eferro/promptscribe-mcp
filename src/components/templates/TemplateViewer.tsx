@@ -1,21 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Copy, Globe, Lock, Edit } from "lucide-react";
+import { ArrowLeft, Copy, Globe, Lock, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { User } from '@supabase/supabase-js';
 import { MCPTemplate } from '@/types/template';
 import { formatDetailedDate } from '@/lib/utils';
+import { useState } from 'react';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 
 interface TemplateViewerProps {
   template: MCPTemplate;
   user: User;
   onBack: () => void;
   onEdit?: (template: MCPTemplate) => void;
+  onDelete?: (template: MCPTemplate) => void;
 }
 
-export default function TemplateViewer({ template, user, onBack, onEdit }: TemplateViewerProps) {
+export default function TemplateViewer({ template, user, onBack, onEdit, onDelete }: TemplateViewerProps) {
   const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(JSON.stringify(template.template_data, null, 2));
@@ -25,6 +29,16 @@ export default function TemplateViewer({ template, user, onBack, onEdit }: Templ
     });
   };
 
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (onDelete) {
+      onDelete(template);
+    }
+    setDeleteDialogOpen(false);
+  };
 
   // Check if current user owns this template
   const isOwner = template.user_id === user.id;
@@ -40,6 +54,12 @@ export default function TemplateViewer({ template, user, onBack, onEdit }: Templ
           <Button variant="outline" size="sm" onClick={() => onEdit(template)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit
+          </Button>
+        )}
+        {isOwner && onDelete && (
+          <Button variant="outline" size="sm" onClick={handleDelete}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
           </Button>
         )}
         <h1 className="text-2xl font-bold flex-1">{template.name}</h1>
@@ -163,6 +183,13 @@ export default function TemplateViewer({ template, user, onBack, onEdit }: Templ
           )}
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        template={template}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
