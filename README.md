@@ -36,6 +36,17 @@ npm i
 npm run dev
 ```
 
+## Environment Variables
+
+Create a `.env` file based on `.env.example` and provide your Supabase credentials:
+
+```
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_PUBLISHABLE_KEY=<your-publishable-key>
+```
+
+These variables are required for the application to connect to Supabase. Ensure your deployment pipeline also supplies these environment variables.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
