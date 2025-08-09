@@ -2,17 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AuthForm from './AuthForm';
-import { supabase } from '@/integrations/supabase/client';
+import { signUp, signIn, resetPassword } from '@/services/authService';
 
-// Mock the supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      signUp: vi.fn(),
-      signInWithPassword: vi.fn(),
-      resetPasswordForEmail: vi.fn(),
-    }
-  }
+vi.mock('@/services/authService', () => ({
+  signUp: vi.fn(),
+  signIn: vi.fn(),
+  resetPassword: vi.fn(),
 }));
 
 // Mock the toast hook
@@ -44,7 +39,7 @@ describe('AuthForm', () => {
   // The functionality works as verified by other tests that interact with signup form
 
   it('handles sign in form submission', async () => {
-    const mockSignIn = vi.mocked(supabase.auth.signInWithPassword);
+    const mockSignIn = vi.mocked(signIn);
     mockSignIn.mockResolvedValue({ data: { user: null, session: null }, error: null });
 
     render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
@@ -59,10 +54,7 @@ describe('AuthForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     
     await waitFor(() => {
-      expect(mockSignIn).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123'
-      });
+      expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123');
     });
   });
 
@@ -78,7 +70,7 @@ describe('AuthForm', () => {
   });
 
   it('handles password reset submission', async () => {
-    const mockResetPassword = vi.mocked(supabase.auth.resetPasswordForEmail);
+    const mockResetPassword = vi.mocked(resetPassword);
     mockResetPassword.mockResolvedValue({ data: {}, error: null });
 
     render(<AuthForm onAuthSuccess={mockOnAuthSuccess} />);
@@ -92,9 +84,7 @@ describe('AuthForm', () => {
     fireEvent.click(screen.getByText('Send Reset Email'));
     
     await waitFor(() => {
-      expect(mockResetPassword).toHaveBeenCalledWith('test@example.com', {
-        redirectTo: expect.stringContaining('/')
-      });
+      expect(mockResetPassword).toHaveBeenCalledWith('test@example.com', expect.stringContaining('/'));
     });
   });
 
@@ -121,8 +111,8 @@ describe('AuthForm', () => {
   });
 
   it('handles unexpected errors in password reset', async () => {
-    // Mock resetPasswordForEmail to throw an unexpected error (not supabase error)
-    vi.mocked(supabase.auth.resetPasswordForEmail).mockRejectedValue(
+    // Mock resetPassword to throw an unexpected error (not supabase error)
+    vi.mocked(resetPassword).mockRejectedValue(
       new Error('Network failure')
     );
 
@@ -163,7 +153,7 @@ describe('AuthForm', () => {
 
   it('handles network errors in sign up', async () => {
     // Mock signUp to throw network error
-    vi.mocked(supabase.auth.signUp).mockRejectedValue(
+    vi.mocked(signUp).mockRejectedValue(
       new Error('Network failure')
     );
 
@@ -194,8 +184,8 @@ describe('AuthForm', () => {
   });
 
   it('handles network errors in sign in', async () => {
-    // Mock signInWithPassword to throw network error
-    vi.mocked(supabase.auth.signInWithPassword).mockRejectedValue(
+    // Mock signIn to throw network error
+    vi.mocked(signIn).mockRejectedValue(
       new Error('Connection timeout')
     );
 

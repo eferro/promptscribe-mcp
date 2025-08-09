@@ -3,22 +3,17 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TemplateEditor from './TemplateEditor';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getUser } from "@/services/authService";
+import { saveTemplate } from "@/services/templateService";
 
 // Mock dependencies
 vi.mock("@/hooks/use-toast");
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn()
-    },
-    from: vi.fn(() => ({
-      update: vi.fn(() => ({
-        eq: vi.fn()
-      })),
-      insert: vi.fn()
-    }))
-  }
+vi.mock("@/services/authService", () => ({
+  getUser: vi.fn(),
+}));
+
+vi.mock("@/services/templateService", () => ({
+  saveTemplate: vi.fn(),
 }));
 
 const mockToast = vi.fn();
@@ -45,15 +40,10 @@ describe('TemplateEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (useToast as any).mockReturnValue({ toast: mockToast });
-    (supabase.auth.getUser as any).mockResolvedValue({
+    (getUser as any).mockResolvedValue({
       data: { user: { id: 'user123' } }
     });
-    (supabase.from as any).mockReturnValue({
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null })
-      }),
-      insert: vi.fn().mockResolvedValue({ error: null })
-    });
+    (saveTemplate as any).mockResolvedValue({ error: null });
   });
 
   it('renders template editor for new template', () => {
@@ -325,7 +315,7 @@ describe('TemplateEditor', () => {
     await user.click(screen.getByText('Save Template'));
     
     await waitFor(() => {
-      expect(supabase.from).toHaveBeenCalledWith('prompt_templates');
+      expect(saveTemplate).toHaveBeenCalled();
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -348,7 +338,7 @@ describe('TemplateEditor', () => {
     await user.click(screen.getByText('Save Template'));
     
     await waitFor(() => {
-      expect(supabase.from).toHaveBeenCalledWith('prompt_templates');
+      expect(saveTemplate).toHaveBeenCalledWith(expect.any(Object), mockTemplate.id);
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -359,7 +349,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles authentication error when user is not logged in', async () => {
-    (supabase.auth.getUser as any).mockResolvedValue({
+    (getUser as any).mockResolvedValue({
       data: { user: null }
     });
     
@@ -384,9 +374,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles save error from supabase', async () => {
-    (supabase.from as any).mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ error: { message: 'Database error' } })
-    });
+    (saveTemplate as any).mockResolvedValue({ error: { message: 'Database error' } });
     
     const user = userEvent.setup();
     render(
@@ -409,7 +397,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles unexpected errors during save', async () => {
-    (supabase.auth.getUser as any).mockRejectedValue(new Error('Network error'));
+    (getUser as any).mockRejectedValue(new Error('Network error'));
     
     const user = userEvent.setup();
     render(

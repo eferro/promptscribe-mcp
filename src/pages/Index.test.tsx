@@ -2,17 +2,12 @@ import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import Index from './Index';
-import { supabase } from '@/integrations/supabase/client';
+import { getSession, onAuthStateChange, signOut } from '@/services/authService';
 
-// Mock the supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      onAuthStateChange: vi.fn(),
-      getSession: vi.fn(),
-      signOut: vi.fn(),
-    }
-  }
+vi.mock('@/services/authService', () => ({
+  getSession: vi.fn(),
+  onAuthStateChange: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 // Mock the components
@@ -75,16 +70,14 @@ describe('Index', () => {
     mockOnAuthStateChange = vi.fn(() => ({
       data: { subscription: { unsubscribe: vi.fn() } }
     }));
-    
-    mockGetSession = vi.fn(() => 
-      Promise.resolve({ data: { session: null } })
-    );
-    
+
+    mockGetSession = vi.fn(() => Promise.resolve({ data: { session: null } }));
+
     mockSignOut = vi.fn(() => Promise.resolve({ error: null }));
-    
-    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation(mockOnAuthStateChange);
-    vi.mocked(supabase.auth.getSession).mockImplementation(mockGetSession);
-    vi.mocked(supabase.auth.signOut).mockImplementation(mockSignOut);
+
+    vi.mocked(onAuthStateChange).mockImplementation(mockOnAuthStateChange);
+    vi.mocked(getSession).mockImplementation(mockGetSession);
+    vi.mocked(signOut).mockImplementation(mockSignOut);
 
     // Clear URL parameters
     delete (window as any).location;

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from "@/services/templateService";
 import { Plus, Search, LogOut } from "lucide-react";
 import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";
@@ -38,20 +38,12 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     setLoading(true);
     try {
       // Fetch user's templates
-      const { data: userTemplates, error: userError } = await supabase
-        .from('prompt_templates')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+      const { data: userTemplates, error: userError } = await fetchUserTemplates(user.id);
 
       if (userError) throw userError;
 
       // Fetch public templates (including user's own)
-      const { data: publicData, error: publicError } = await supabase
-        .from('prompt_templates')
-        .select('*')
-        .eq('is_public', true)
-        .order('updated_at', { ascending: false });
+      const { data: publicData, error: publicError } = await fetchPublicTemplates();
 
       if (publicError) throw publicError;
 
@@ -92,10 +84,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     if (!templateToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from('prompt_templates')
-        .delete()
-        .eq('id', templateToDelete.id);
+      const { error } = await deleteTemplate(templateToDelete.id);
 
       if (error) throw error;
 
