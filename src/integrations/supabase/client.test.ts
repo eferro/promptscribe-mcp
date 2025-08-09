@@ -24,6 +24,11 @@ describe('Supabase Client', () => {
     expect(supabase.from).toBeDefined();
   });
 
+  it('uses environment variables for configuration', () => {
+    expect((supabase as any).supabaseUrl).toBe(process.env.SUPABASE_URL);
+    expect((supabase as any).supabaseKey).toBe(process.env.SUPABASE_PUBLISHABLE_KEY);
+  });
+
   it('has auth methods available', () => {
     expect(supabase.auth.signUp).toBeDefined();
     expect(supabase.auth.signInWithPassword).toBeDefined();
