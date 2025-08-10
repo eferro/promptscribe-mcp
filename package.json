@@ -11,8 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:prod": "vite build --mode production && vite preview --base /promptscribe-mcp/",
-    "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
