@@ -5,8 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  Object.assign(process.env, env);
+  const env = loadEnv(mode, process.cwd(), "VITE_");
   return {
     base: mode === 'production' ? '/promptscribe-mcp/' : '/',
     server: {
@@ -23,8 +22,7 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    define: {
-      'process.env': env
-    }
+    // Do not inline arbitrary process.env values into the client bundle.
+    // Rely on Vite's import.meta.env for VITE_* variables.
   };
 });
