@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MCPTemplate, TemplateArgument, TemplateMessage, TemplateData } from '@/types/template';
+import useArrayField from './useArrayField';
 
 export function useTemplateEditor(initial?: MCPTemplate) {
   const [name, setName] = useState(initial?.name ?? '');
@@ -7,48 +8,26 @@ export function useTemplateEditor(initial?: MCPTemplate) {
   const [isPublic, setIsPublic] = useState(initial?.is_public ?? false);
 
   const initialData: TemplateData = (initial?.template_data ?? {}) as TemplateData;
-  const [arguments_, setArguments] = useState<TemplateArgument[]>(
-    initialData.arguments ?? []
+
+  const {
+    items: arguments_,
+    addItem: addArgument,
+    removeItem: removeArgument,
+    updateItem: updateArgument,
+  } = useArrayField<TemplateArgument>(
+    initialData.arguments ?? [],
+    () => ({ name: '', description: '', required: false })
   );
-  const [messages, setMessages] = useState<TemplateMessage[]>(
-    initialData.messages ?? [{ role: 'user', content: '{{prompt}}' }]
+
+  const {
+    items: messages,
+    addItem: addMessage,
+    removeItem: removeMessage,
+    updateItem: updateMessage,
+  } = useArrayField<TemplateMessage>(
+    initialData.messages ?? [{ role: 'user', content: '{{prompt}}' }],
+    () => ({ role: 'user', content: '' })
   );
-
-  const addArgument = () => {
-    setArguments([...arguments_, { name: '', description: '', required: false }]);
-  };
-
-  const removeArgument = (index: number) => {
-    setArguments(arguments_.filter((_, i) => i !== index));
-  };
-
-  const updateArgument = (
-    index: number,
-    field: keyof TemplateArgument,
-    value: string | boolean
-  ) => {
-    const updated = [...arguments_];
-    updated[index] = { ...updated[index], [field]: value };
-    setArguments(updated);
-  };
-
-  const addMessage = () => {
-    setMessages([...messages, { role: 'user', content: '' }]);
-  };
-
-  const removeMessage = (index: number) => {
-    setMessages(messages.filter((_, i) => i !== index));
-  };
-
-  const updateMessage = (
-    index: number,
-    field: keyof TemplateMessage,
-    value: string
-  ) => {
-    const updated = [...messages];
-    updated[index] = { ...updated[index], [field]: value };
-    setMessages(updated);
-  };
 
   return {
     name,
