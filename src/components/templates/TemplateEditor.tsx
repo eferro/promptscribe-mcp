@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import useTemplateEditor from '@/hooks/useTemplateEditor';
 import { getUser } from "@/services/authService";
 import { saveTemplate } from "@/services/templateService";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
-import { MCPTemplate, TemplateMessage, TemplateArgument, TemplateData } from '@/types/template';
+import { MCPTemplate, TemplateData } from '@/types/template';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
+import TemplateArgumentsEditor from './TemplateArgumentsEditor';
 
 interface TemplateEditorProps {
   template?: MCPTemplate;
@@ -21,50 +23,26 @@ interface TemplateEditorProps {
 
 
 export default function TemplateEditor({ template, onSave, onCancel, onDelete }: TemplateEditorProps) {
-  const [name, setName] = useState(template?.name || '');
-  const [description, setDescription] = useState(template?.description || '');
-  const [isPublic, setIsPublic] = useState(template?.is_public || false);
-  
-  // Extract arguments and messages from template data
-  const initialData: TemplateData = (template?.template_data ?? {}) as TemplateData;
-  const [arguments_, setArguments] = useState<TemplateArgument[]>(
-    initialData.arguments ?? []
-  );
-  const [messages, setMessages] = useState<TemplateMessage[]>(
-    initialData.messages ?? [{ role: 'user', content: '{{prompt}}' }]
-  );
-  
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    isPublic,
+    setIsPublic,
+    arguments_,
+    addArgument,
+    removeArgument,
+    updateArgument,
+    messages,
+    addMessage,
+    removeMessage,
+    updateMessage,
+  } = useTemplateEditor(template);
+
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
-
-  const addArgument = () => {
-    setArguments([...arguments_, { name: '', description: '', required: false }]);
-  };
-
-  const removeArgument = (index: number) => {
-    setArguments(arguments_.filter((_, i) => i !== index));
-  };
-
-  const updateArgument = (index: number, field: keyof TemplateArgument, value: string | boolean) => {
-    const updated = [...arguments_];
-    updated[index] = { ...updated[index], [field]: value };
-    setArguments(updated);
-  };
-
-  const addMessage = () => {
-    setMessages([...messages, { role: 'user', content: '' }]);
-  };
-
-  const removeMessage = (index: number) => {
-    setMessages(messages.filter((_, i) => i !== index));
-  };
-
-  const updateMessage = (index: number, field: keyof TemplateMessage, value: string) => {
-    const updated = [...messages];
-    updated[index] = { ...updated[index], [field]: value };
-    setMessages(updated);
-  };
 
   const handleDelete = () => {
     setDeleteDialogOpen(true);
@@ -209,63 +187,12 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
           </CardContent>
         </Card>
 
-        {/* Template Arguments */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Arguments</CardTitle>
-                <CardDescription>
-                  Define the variables that users can customize in this template
-                </CardDescription>
-              </div>
-              <Button onClick={addArgument} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Argument
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {arguments_.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                No arguments defined. Arguments allow users to customize your template with variables like {"{{name}}"} or {"{{topic}}"}.
-              </p>
-            ) : (
-              arguments_.map((arg, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
-                  <div className="space-y-2">
-                    <Label>Name *</Label>
-                    <Input
-                      placeholder="e.g., topic, name, style"
-                      value={arg.name}
-                      onChange={(e) => updateArgument(index, 'name', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Input
-                      placeholder="Describe this argument"
-                      value={arg.description}
-                      onChange={(e) => updateArgument(index, 'description', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between md:col-span-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={arg.required}
-                        onCheckedChange={(checked) => updateArgument(index, 'required', checked)}
-                      />
-                      <Label>Required</Label>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => removeArgument(index)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <TemplateArgumentsEditor
+          arguments_={arguments_}
+          addArgument={addArgument}
+          removeArgument={removeArgument}
+          updateArgument={updateArgument}
+        />
 
         {/* Template Messages */}
         <Card>
