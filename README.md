@@ -38,14 +38,18 @@ npm run dev
 
 ## Environment Variables
 
-Create a `.env` file based on `.env.example` and provide your Supabase credentials:
+Create a `.env.local` file based on `.env.example` and provide your Supabase credentials:
 
 ```
-SUPABASE_URL=<your-supabase-url>
-SUPABASE_PUBLISHABLE_KEY=<your-publishable-key>
+VITE_SUPABASE_URL=https://fdtotoxhicqhoulckkgj.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
-These variables are required for the application to connect to Supabase. Ensure your deployment pipeline also supplies these environment variables.
+These variables are required for the application to connect to Supabase. The `VITE_` prefix is required for Vite to expose these variables to the client-side code.
+
+**For CI/CD deployment**, ensure your deployment pipeline supplies these environment variables as secrets:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
 **Edit a file directly in GitHub**
 
