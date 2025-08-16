@@ -2,9 +2,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TemplateService } from './templateService';
 import { Template } from '../types/template';
 
+// Mock Supabase client type for testing
+interface MockSupabaseClient {
+  from: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+  insert: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  eq: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  single: ReturnType<typeof vi.fn>;
+}
+
 describe('TemplateService', () => {
   let service: TemplateService;
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     mockSupabase = {
