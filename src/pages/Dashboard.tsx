@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTemplateService } from "@/hooks/useServices";
@@ -34,15 +34,8 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   const { toast } = useToast();
   const templateService = useTemplateService();
   
-  // Filtered data using custom hook
-  const filteredMyTemplates = useTemplateSearch(myTemplates, searchQuery);
-  const filteredPublicTemplates = useTemplateSearch(publicTemplates, searchQuery);
-
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
+  // Fetch templates function
+  const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch user's templates
@@ -62,7 +55,15 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [templateService, user.id, toast]);
+
+  // Filtered data using custom hook
+  const filteredMyTemplates = useTemplateSearch(myTemplates, searchQuery);
+  const filteredPublicTemplates = useTemplateSearch(publicTemplates, searchQuery);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const handleCreateNew = () => {
     setSelectedTemplate(null);
