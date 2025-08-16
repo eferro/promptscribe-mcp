@@ -91,14 +91,28 @@ describe('Index', () => {
     });
   });
 
-  it('shows loading state initially', () => {
+  
+
+  it('shows loading state initially', async () => {
+    // Mock getSession to be slow
+    let resolve: any;
+    mockGetSession.mockReturnValue(new Promise(r => resolve = r));
+
     render(
       <IndexWrapper>
         <Index />
       </IndexWrapper>
     );
-    
+
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    // Resolve the promise and wait for the loading to disappear
+    await act(async () => {
+      resolve({ data: { session: null } });
+      await new Promise(r => setTimeout(r, 0));
+    });
+
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
   });
 
   it('shows auth form when user is not authenticated', async () => {

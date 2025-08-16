@@ -6,25 +6,23 @@ const mockTemplate = {
   id: 'template-1',
   name: 'Test Template',
   description: 'A test template description',
-  template_data: {
-    arguments: [
-      { name: 'arg1', description: '', required: false },
-      { name: 'arg2', description: '', required: false }
-    ],
-    messages: [
-      { role: 'user', content: 'test' },
-      { role: 'assistant', content: 'response' }
-    ]
-  },
-  is_public: true,
-  created_at: '2023-01-01T00:00:00Z',
-  updated_at: '2023-01-15T00:00:00Z',
-  user_id: 'user-123'
+  arguments: [
+    { name: 'arg1', description: '', required: false },
+    { name: 'arg2', description: '', required: false }
+  ],
+  messages: [
+    { role: 'user', content: 'test' },
+    { role: 'assistant', content: 'response' }
+  ],
+  isPublic: true,
+  createdAt: '2023-01-01T00:00:00Z',
+  updatedAt: '2023-01-15T00:00:00Z',
+  userId: 'user-123'
 };
 
 const mockTemplatePrivate = {
   ...mockTemplate,
-  is_public: false
+  isPublic: false
 };
 
 const mockTemplateNoDescription = {
@@ -34,7 +32,8 @@ const mockTemplateNoDescription = {
 
 const mockTemplateNoData = {
   ...mockTemplate,
-  template_data: null
+  arguments: [],
+  messages: []
 };
 
 describe('TemplateCard', () => {
@@ -185,7 +184,7 @@ describe('TemplateCard', () => {
     const onView = vi.fn();
     const templateWithSpecificDate = {
       ...mockTemplate,
-      updated_at: '2023-12-25T15:30:00Z'
+      updatedAt: '2023-12-25T15:30:00Z'
     };
     
     render(

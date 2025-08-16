@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
 import { useTemplateService } from '@/hooks/useServices';
@@ -86,7 +86,9 @@ describe('Dashboard', () => {
   });
 
   it('renders dashboard header with user email', async () => {
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    await act(async () => {
+      render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    });
     
     expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
     expect(screen.getByText(`Welcome, ${mockUser.email}`)).toBeInTheDocument();
@@ -94,8 +96,10 @@ describe('Dashboard', () => {
     expect(screen.getByText('Sign Out')).toBeInTheDocument();
   });
 
-  it('renders search input', () => {
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+  it('renders search input', async () => {
+    await act(async () => {
+      render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    });
     
     expect(screen.getByPlaceholderText('Search templates...')).toBeInTheDocument();
   });
@@ -109,10 +113,14 @@ describe('Dashboard', () => {
     });
   });
 
-  it('handles new template creation', () => {
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+  it('handles new template creation', async () => {
+    await act(async () => {
+      render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    });
     
-    fireEvent.click(screen.getByText('New Template'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('New Template'));
+    });
     expect(screen.getByTestId('template-editor')).toBeInTheDocument();
   });
 
@@ -184,10 +192,14 @@ describe('Dashboard', () => {
     expect(mockTemplateService.delete).not.toHaveBeenCalled();
   });
 
-  it('handles sign out', () => {
-    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+  it('handles sign out', async () => {
+    await act(async () => {
+      render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+    });
     
-    fireEvent.click(screen.getByText('Sign Out'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Sign Out'));
+    });
     expect(mockOnSignOut).toHaveBeenCalled();
   });
 
@@ -205,12 +217,18 @@ describe('Dashboard', () => {
     });
   });
 
-  it('displays loading state', () => {
+  it('displays loading state', async () => {
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
     
     // During initial render, loading skeleton should be visible
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
+
+    // Wait for the loading to complete
+    await waitFor(() => {
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons.length).toBe(0);
+    });
   });
 
 
