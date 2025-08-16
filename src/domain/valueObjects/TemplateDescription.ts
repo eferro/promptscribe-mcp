@@ -1,3 +1,5 @@
+import { ValidationError } from '../errors/DomainError';
+
 export class TemplateDescription {
   private constructor(private readonly value: string) {}
 
@@ -9,7 +11,7 @@ export class TemplateDescription {
     }
     
     if (trimmed.length > 500) {
-      throw new Error('Template description cannot exceed 500 characters');
+      throw new ValidationError('Template description cannot exceed 500 characters', 'description');
     }
     
     return new TemplateDescription(trimmed);

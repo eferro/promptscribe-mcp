@@ -2,6 +2,7 @@ import { TemplateId } from '../valueObjects/TemplateId';
 import { TemplateName } from '../valueObjects/TemplateName';
 import { TemplateDescription } from '../valueObjects/TemplateDescription';
 import { UserId } from '../valueObjects/UserId';
+import { BusinessRuleError } from '../errors/DomainError';
 
 export interface TemplateMessage {
   role: 'user' | 'assistant' | 'system';
@@ -51,7 +52,7 @@ export class Template {
 
   static create(params: CreateTemplateParams): Template {
     if (params.messages.length === 0) {
-      throw new Error('Template must have at least one message');
+      throw new BusinessRuleError('Template must have at least one message', 'MinimumMessagesRule');
     }
 
     const now = new Date();

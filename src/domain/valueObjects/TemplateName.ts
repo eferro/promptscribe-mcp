@@ -1,3 +1,5 @@
+import { ValidationError } from '../errors/DomainError';
+
 export class TemplateName {
   private constructor(private readonly value: string) {}
 
@@ -5,11 +7,11 @@ export class TemplateName {
     const trimmed = value.trim();
     
     if (!trimmed) {
-      throw new Error('Template name cannot be empty');
+      throw new ValidationError('Template name cannot be empty', 'name');
     }
     
     if (trimmed.length > 100) {
-      throw new Error('Template name cannot exceed 100 characters');
+      throw new ValidationError('Template name cannot exceed 100 characters', 'name');
     }
     
     return new TemplateName(trimmed);

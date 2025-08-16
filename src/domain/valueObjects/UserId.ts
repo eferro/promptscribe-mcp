@@ -1,9 +1,11 @@
+import { ValidationError } from '../errors/DomainError';
+
 export class UserId {
   private constructor(private readonly value: string) {}
 
   static create(value: string): UserId {
     if (!this.isValidUuid(value)) {
-      throw new Error('Invalid user ID format');
+      throw new ValidationError('Invalid user ID format', 'userId');
     }
     
     return new UserId(value);

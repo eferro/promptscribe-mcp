@@ -1,11 +1,12 @@
 import { randomUUID } from 'crypto';
+import { ValidationError } from '../errors/DomainError';
 
 export class TemplateId {
   private constructor(private readonly value: string) {}
 
   static create(value: string): TemplateId {
     if (!this.isValidUuid(value)) {
-      throw new Error('Invalid template ID format');
+      throw new ValidationError('Invalid template ID format', 'id');
     }
     
     return new TemplateId(value);
