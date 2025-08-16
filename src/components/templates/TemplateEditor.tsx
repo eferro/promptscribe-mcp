@@ -111,11 +111,11 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
         description: template?.id ? "Template updated successfully" : "Template created successfully"
       });
       onSave();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "An unexpected error occurred"
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
       });
     } finally {
       setLoading(false);
