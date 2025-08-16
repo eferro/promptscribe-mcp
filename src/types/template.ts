@@ -45,7 +45,7 @@ export function validateTemplate(template: Partial<Template>, isUpdate = false):
   
   if (isUpdate) {
     // For updates, only validate fields that are being set
-    if (template.hasOwnProperty('name')) {
+    if ('name' in template) {
       if (!template.name?.trim()) {
         errors.push('Name is required');
       }
@@ -55,7 +55,7 @@ export function validateTemplate(template: Partial<Template>, isUpdate = false):
       }
     }
     
-    if (template.hasOwnProperty('messages')) {
+    if ('messages' in template) {
       if (!template.messages || template.messages.length === 0) {
         errors.push('At least one message is required');
       }
