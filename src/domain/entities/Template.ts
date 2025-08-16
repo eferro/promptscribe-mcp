@@ -1,7 +1,6 @@
-import { TemplateId } from '../valueObjects/TemplateId';
-import { TemplateName } from '../valueObjects/TemplateName';
-import { TemplateDescription } from '../valueObjects/TemplateDescription';
-import { UserId } from '../valueObjects/UserId';
+// Temporary compatibility layer - to be removed in Phase 2
+// This file provides compatibility with the old domain entity API
+
 import { BusinessRuleError } from '../errors/DomainError';
 
 export interface TemplateMessage {
@@ -37,18 +36,13 @@ export interface TemplatePersistenceData {
   updatedAt: Date;
 }
 
+// Simple class that wraps the new Template interface with the old API
 export class Template {
-  private constructor(
-    private readonly id: TemplateId,
-    private name: TemplateName,
-    private description: TemplateDescription | null,
-    private readonly userId: UserId,
-    private _isPublic: boolean,
-    private messages: TemplateMessage[],
-    private arguments_: TemplateArgument[],
-    private readonly createdAt: Date,
-    private updatedAt: Date
-  ) {}
+  private data: any;
+
+  private constructor(data: any) {
+    this.data = data;
+  }
 
   static create(params: CreateTemplateParams): Template {
     if (params.messages.length === 0) {
@@ -57,70 +51,73 @@ export class Template {
 
     const now = new Date();
     
-    return new Template(
-      TemplateId.generate(),
-      TemplateName.create(params.name),
-      params.description ? TemplateDescription.create(params.description) : null,
-      UserId.create(params.userId),
-      params.isPublic,
-      [...params.messages], // Copy to prevent external mutation
-      [...params.arguments_], // Copy to prevent external mutation
-      now,
-      now
-    );
+    const data = {
+      id: crypto.randomUUID(),
+      name: params.name,
+      description: params.description,
+      userId: params.userId,
+      isPublic: params.isPublic,
+      messages: [...params.messages],
+      arguments_: [...params.arguments_],
+      createdAt: now,
+      updatedAt: now
+    };
+
+    return new Template(data);
   }
 
   static fromPersistence(data: TemplatePersistenceData): Template {
-    return new Template(
-      TemplateId.create(data.id),
-      TemplateName.create(data.name),
-      data.description ? TemplateDescription.create(data.description) : null,
-      UserId.create(data.userId),
-      data.isPublic,
-      [...data.messages], // Copy to prevent external mutation
-      [...data.arguments_], // Copy to prevent external mutation
-      data.createdAt,
-      data.updatedAt
-    );
+    return new Template({
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      userId: data.userId,
+      isPublic: data.isPublic,
+      messages: [...data.messages],
+      arguments_: [...data.arguments_],
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
+    });
   }
 
-  // Getters
-  getId(): TemplateId { return this.id; }
-  getName(): TemplateName { return this.name; }
-  getDescription(): TemplateDescription | null { return this.description; }
-  getUserId(): UserId { return this.userId; }
-  isPublic(): boolean { return this._isPublic; }
-  getMessages(): TemplateMessage[] { return [...this.messages]; }
-  getArguments(): TemplateArgument[] { return [...this.arguments_]; }
-  getCreatedAt(): Date { return this.createdAt; }
-  getUpdatedAt(): Date { return this.updatedAt; }
+  // Legacy getters - return simple values instead of value objects
+  getId(): any { return { getValue: () => this.data.id }; }
+  getName(): any { return { getValue: () => this.data.name }; }
+  getDescription(): any { return this.data.description ? { getValue: () => this.data.description } : null; }
+  getUserId(): any { return { getValue: () => this.data.userId }; }
+  isPublic(): boolean { return this.data.isPublic; }
+  getMessages(): TemplateMessage[] { return [...this.data.messages]; }
+  getArguments(): TemplateArgument[] { return [...this.data.arguments_]; }
+  getCreatedAt(): Date { return this.data.createdAt; }
+  getUpdatedAt(): Date { return this.data.updatedAt; }
 
   // Business Methods
   updateName(newName: string): void {
-    this.name = TemplateName.create(newName);
-    this.updatedAt = new Date();
+    this.data.name = newName;
+    this.data.updatedAt = new Date();
   }
 
   updateDescription(newDescription: string | null): void {
-    this.description = newDescription ? TemplateDescription.create(newDescription) : null;
-    this.updatedAt = new Date();
+    this.data.description = newDescription;
+    this.data.updatedAt = new Date();
   }
 
-  isOwnedBy(userId: UserId): boolean {
-    return this.userId.equals(userId);
+  isOwnedBy(userId: any): boolean {
+    const userIdValue = typeof userId === 'string' ? userId : userId.getValue();
+    return this.data.userId === userIdValue;
   }
 
-  canBeEditedBy(userId: UserId): boolean {
+  canBeEditedBy(userId: any): boolean {
     return this.isOwnedBy(userId);
   }
 
   makePublic(): void {
-    this._isPublic = true;
-    this.updatedAt = new Date();
+    this.data.isPublic = true;
+    this.data.updatedAt = new Date();
   }
 
   makePrivate(): void {
-    this._isPublic = false;
-    this.updatedAt = new Date();
+    this.data.isPublic = false;
+    this.data.updatedAt = new Date();
   }
 }

@@ -1,20 +1,15 @@
-import { ValidationError } from '../errors/DomainError';
-
+// Temporary compatibility layer - to be removed in Phase 2
 export class TemplateName {
-  private constructor(private readonly value: string) {}
+  constructor(private readonly value: string) {}
 
   static create(value: string): TemplateName {
-    const trimmed = value.trim();
-    
-    if (!trimmed) {
-      throw new ValidationError('Template name cannot be empty', 'name');
+    if (!value?.trim()) {
+      throw new Error('Template name cannot be empty');
     }
-    
-    if (trimmed.length > 100) {
-      throw new ValidationError('Template name cannot exceed 100 characters', 'name');
+    if (value.length > 100) {
+      throw new Error('Template name cannot exceed 100 characters');
     }
-    
-    return new TemplateName(trimmed);
+    return new TemplateName(value);
   }
 
   getValue(): string {

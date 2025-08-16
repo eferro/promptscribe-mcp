@@ -1,20 +1,12 @@
-import { ValidationError } from '../errors/DomainError';
-
+// Temporary compatibility layer - to be removed in Phase 2
 export class TemplateDescription {
-  private constructor(private readonly value: string) {}
+  constructor(private readonly value: string) {}
 
-  static create(value: string): TemplateDescription | null {
-    const trimmed = value.trim();
-    
-    if (!trimmed) {
-      return null;
+  static create(value: string): TemplateDescription {
+    if (value && value.length > 1000) {
+      throw new Error('Template description cannot exceed 1000 characters');
     }
-    
-    if (trimmed.length > 500) {
-      throw new ValidationError('Template description cannot exceed 500 characters', 'description');
-    }
-    
-    return new TemplateDescription(trimmed);
+    return new TemplateDescription(value);
   }
 
   getValue(): string {

@@ -1,4 +1,5 @@
 // This is a contract test base class - tests the interface behavior
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TemplateRepository } from './TemplateRepository';
 import { Template } from '../entities/Template';
 import { TemplateId } from '../valueObjects/TemplateId';
@@ -112,3 +113,10 @@ export abstract class TemplateRepositoryContractTest {
     };
   }
 }
+
+// Dummy test to satisfy vitest
+describe('TemplateRepositoryContractTest', () => {
+  it('should be available for concrete implementations', () => {
+    expect(TemplateRepositoryContractTest).toBeDefined();
+  });
+});

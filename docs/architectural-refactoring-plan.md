@@ -1,362 +1,151 @@
-# Architectural Refactoring Plan: Domain Models & Repository Pattern
+# Simplified Architectural Refactoring Plan: XP Pragmatic Approach
 
 ## 🎯 **Mission Statement**
 
-Refactor the PromptScribe MCP application to eliminate architectural pain points by implementing **Domain-Driven Design** principles and **Repository Pattern**, following **Extreme Programming (XP)** methodology with emphasis on **simplicity**, **clean code**, and **evolutionary architecture**.
+Refactor PromptScribe MCP to eliminate over-engineering and architectural complexity following **Extreme Programming (XP)** principles: **simplicity first**, **clean code**, and **evolutionary architecture**.
+
+**Core Principle: "The simplest thing that could possibly work"**
 
 ---
 
-## 🧠 **XP Developer Mindset Requirements**
+## 🧠 **XP Developer Mindset**
 
-**As a Senior XP Developer, you MUST:**
+**As a Senior XP Developer, prioritize:**
 
-- **Prioritize Simplicity**: Choose the simplest solution that works
-- **Write Clean Code**: Small classes, meaningful names, no duplication
-- **Follow TDD Religiously**: Red → Green → Refactor on every change
-- **Take Small Steps**: Implement only what's needed to pass current test
-- **Refactor Fearlessly**: Improve structure while keeping tests green
-- **Communicate Intent**: Code should be self-documenting
-- **Maintain Continuous Delivery**: Keep code deployable at all times
+- **Simplicity over Cleverness**: Choose the most obvious solution
+- **YAGNI**: You Aren't Gonna Need It - don't build what you don't need today
+- **Clean Code**: Small functions, meaningful names, no duplication
+- **TDD**: Red → Green → Refactor, but don't over-abstract
+- **Evolutionary Design**: Let architecture emerge from requirements
 
-**Code Quality Standards:**
-- **Functions < 20 lines** (highlight any longer)
-- **Classes with single responsibility**
+**Quality Standards:**
+- **Functions < 20 lines**
+- **Components < 100 lines**
+- **One responsibility per file**
 - **No duplicated logic**
-- **Meaningful variable/method names**
-- **100% test coverage for business logic**
+- **Meaningful names everywhere**
 
 ---
 
-## 🔍 **Current Architecture Problems**
+## 🔍 **Current Problems Analysis**
 
-### **Problem 1: Persistence Layer Coupling**
+### **Problem 1: Over-Engineering Domain Layer**
 ```typescript
-// CURRENT: src/services/templateService.ts
-export async function saveTemplate(payload: any, id?: string) {
-  if (id) {
-    return handleRequest(
-      supabase.from('prompt_templates').update(payload).eq('id', id),
-      'Failed to save template'
-    );
-  }
-  return handleRequest(
-    supabase.from('prompt_templates').insert([payload]),
-    'Failed to save template'
-  );
+// CURRENT: Unnecessary complexity
+class TemplateName {
+  private constructor(private readonly value: string) {}
+  static create(value: string): TemplateName { /* validation */ }
+  getValue(): string { return this.value; }
+  equals(other: TemplateName): boolean { /* comparison */ }
 }
-```
-**Issues:**
-- Direct Supabase coupling
-- `any` type loses safety
-- Business logic mixed with persistence
-- Impossible to unit test without Supabase
-- Cannot switch databases without full rewrite
 
-### **Problem 2: Anemic Domain Models**
-```typescript
-// CURRENT: src/types/template.ts
-export interface MCPTemplate {
+class TemplateId {
+  static create(value: string): TemplateId { /* validation */ }
+}
+
+// SIMPLE SOLUTION: Just use TypeScript interfaces
+interface Template {
   id: string;
   name: string;
-  description: string | null;
-  template_data: TemplateData | null;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
+  description?: string;
+  // ... rest of properties
 }
 ```
-**Issues:**
-- No behavior, only data structure
-- Validation scattered in UI components
-- No business rules encapsulation
-- No domain invariants protection
 
-### **Problem 3: UI Components with Business Logic**
+### **Problem 2: Multiple Service Layers**
 ```typescript
-// CURRENT: src/components/templates/TemplateEditor.tsx lines 55-72
-const handleSave = async () => {
-  if (!name.trim()) {
-    toast({ variant: "destructive", title: "Validation Error", description: "Template name is required" });
-    return;
-  }
-  if (messages.length === 0) {
-    toast({ variant: "destructive", title: "Validation Error", description: "At least one message is required" });
-    return;
-  }
-  // Business logic mixed with UI...
+// CURRENT: Three different services doing similar things
+- TemplateApplicationService
+- templateService  
+- templateServiceAdapter
+
+// SIMPLE SOLUTION: One service class
+class TemplateService {
+  // All operations in one place
 }
 ```
-**Issues:**
-- Validation in presentation layer
-- Business rules in UI components
-- Difficult to test business logic
-- Potential duplication across components
+
+### **Problem 3: Monolithic Components**
+```typescript
+// CURRENT: Dashboard.tsx (281 lines)
+- Authentication logic
+- Template fetching
+- Search functionality
+- Navigation logic
+- Delete confirmation
+- State management
+
+// SIMPLE SOLUTION: Extract focused components
+- DashboardHeader
+- TemplateSearch  
+- TemplateGrid
+- Dashboard (orchestration only)
+```
 
 ---
 
-## 🏗️ **Target Architecture**
+## 🏗️ **Target Simple Architecture**
 
 ```
 src/
-├── domain/
-│   ├── entities/
-│   │   └── Template.ts           # Rich domain model
-│   ├── valueObjects/
-│   │   ├── TemplateId.ts
-│   │   ├── TemplateName.ts
-│   │   └── UserId.ts
-│   ├── repositories/
-│   │   └── TemplateRepository.ts  # Interface only
-│   └── errors/
-│       └── DomainError.ts
-├── application/
-│   └── TemplateApplicationService.ts  # Use cases
-├── infrastructure/
-│   └── repositories/
-│       └── SupabaseTemplateRepository.ts  # Implementation
-└── components/                    # Clean UI only
+├── components/           # Small, focused UI components
+│   ├── Dashboard/       # Dashboard feature components
+│   ├── Templates/       # Template feature components  
+│   └── Auth/           # Auth feature components
+├── hooks/               # Custom hooks for logic
+├── services/            # ONE service per domain
+│   └── TemplateService.ts
+├── types/               # Simple TypeScript interfaces
+│   └── template.ts
+└── utils/              # Pure utility functions
 ```
+
+**Key Differences:**
+- ❌ No domain/valueObjects layer
+- ❌ No application service layer  
+- ❌ No dependency injection container
+- ❌ No repository pattern (overkill for this app size)
+- ✅ Simple services with clear methods
+- ✅ React hooks for state management
+- ✅ Small, focused components
 
 ---
 
-## 📋 **Implementation Phases**
+## 📋 **Implementation Plan**
 
-## **PHASE 1: Value Objects Foundation**
+## **PHASE 1: Simplify Data Models**
 
-### **Step 1.1: TemplateName Value Object**
+### **Step 1.1: Single Template Interface**
 
-**🔴 FIRST: Write Failing Test**
-Create: `src/domain/valueObjects/TemplateName.test.ts`
+**🔴 Test First**
 ```typescript
-import { TemplateName } from './TemplateName';
-
-describe('TemplateName', () => {
-  describe('create', () => {
-    it('should create valid template name', () => {
-      const name = TemplateName.create('My Template');
-      expect(name.getValue()).toBe('My Template');
-    });
-
-    it('should trim whitespace', () => {
-      const name = TemplateName.create('  My Template  ');
-      expect(name.getValue()).toBe('My Template');
-    });
-
-    it('should throw for empty name', () => {
-      expect(() => TemplateName.create('')).toThrow('Template name cannot be empty');
-      expect(() => TemplateName.create('   ')).toThrow('Template name cannot be empty');
-    });
-
-    it('should throw for name too long', () => {
-      const longName = 'a'.repeat(101);
-      expect(() => TemplateName.create(longName)).toThrow('Template name cannot exceed 100 characters');
-    });
+// src/types/template.test.ts
+describe('Template validation', () => {
+  it('should validate required fields', () => {
+    expect(validateTemplate({})).toContain('Name is required');
   });
-
-  describe('equals', () => {
-    it('should return true for same values', () => {
-      const name1 = TemplateName.create('Template');
-      const name2 = TemplateName.create('Template');
-      expect(name1.equals(name2)).toBe(true);
-    });
-
-    it('should return false for different values', () => {
-      const name1 = TemplateName.create('Template1');
-      const name2 = TemplateName.create('Template2');
-      expect(name1.equals(name2)).toBe(false);
-    });
+  
+  it('should validate name length', () => {
+    expect(validateTemplate({ name: 'a'.repeat(101) }))
+      .toContain('Name too long');
   });
 });
 ```
 
-**🟢 THEN: Make Tests Pass**
-Create: `src/domain/valueObjects/TemplateName.ts`
+**🟢 Implementation**
 ```typescript
-export class TemplateName {
-  private constructor(private readonly value: string) {}
-
-  static create(value: string): TemplateName {
-    const trimmed = value.trim();
-    
-    if (!trimmed) {
-      throw new Error('Template name cannot be empty');
-    }
-    
-    if (trimmed.length > 100) {
-      throw new Error('Template name cannot exceed 100 characters');
-    }
-    
-    return new TemplateName(trimmed);
-  }
-
-  getValue(): string {
-    return this.value;
-  }
-
-  equals(other: TemplateName): boolean {
-    return this.value === other.value;
-  }
+// src/types/template.ts
+export interface Template {
+  id: string;
+  name: string;
+  description?: string;
+  messages: TemplateMessage[];
+  arguments: TemplateArgument[];
+  isPublic: boolean;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
 }
-```
-
-**✅ Acceptance Criteria:**
-- [ ] All tests pass
-- [ ] No linting errors
-- [ ] Code coverage 100%
-- [ ] Function < 20 lines each
-- [ ] Meaningful names used
-
-### **Step 1.2: Additional Value Objects**
-
-**Create these following same TDD pattern:**
-
-1. **TemplateDescription** (`src/domain/valueObjects/TemplateDescription.ts`)
-   - Max 500 characters
-   - Can be null
-   - Trims whitespace
-
-2. **TemplateId** (`src/domain/valueObjects/TemplateId.ts`)
-   - UUID format validation
-   - Generate new IDs
-   - Equality comparison
-
-3. **UserId** (`src/domain/valueObjects/UserId.ts`)
-   - UUID format validation
-   - Equality comparison
-
-**Test Pattern Template:**
-```typescript
-describe('[ValueObjectName]', () => {
-  describe('create', () => {
-    it('should create valid [object]', () => {
-      // Test valid creation
-    });
-    
-    it('should validate constraints', () => {
-      // Test all validation rules
-    });
-  });
-
-  describe('equals', () => {
-    // Test equality behavior
-  });
-});
-```
-
----
-
-## **PHASE 2: Domain Entity**
-
-### **Step 2.1: Template Entity**
-
-**🔴 FIRST: Write Failing Test**
-Create: `src/domain/entities/Template.test.ts`
-```typescript
-import { Template } from './Template';
-import { TemplateId } from '../valueObjects/TemplateId';
-import { TemplateName } from '../valueObjects/TemplateName';
-import { UserId } from '../valueObjects/UserId';
-
-describe('Template', () => {
-  const validParams = {
-    name: 'Test Template',
-    description: 'Test description',
-    messages: [{ role: 'user' as const, content: 'Hello' }],
-    arguments_: [],
-    userId: 'user-123',
-    isPublic: false
-  };
-
-  describe('create', () => {
-    it('should create template with valid data', () => {
-      const template = Template.create(validParams);
-      
-      expect(template.getName().getValue()).toBe('Test Template');
-      expect(template.getDescription()?.getValue()).toBe('Test description');
-      expect(template.isPublic()).toBe(false);
-      expect(template.getMessages()).toHaveLength(1);
-    });
-
-    it('should throw if no messages provided', () => {
-      const params = { ...validParams, messages: [] };
-      expect(() => Template.create(params)).toThrow('Template must have at least one message');
-    });
-
-    it('should generate unique ID', () => {
-      const template1 = Template.create(validParams);
-      const template2 = Template.create(validParams);
-      expect(template1.getId().equals(template2.getId())).toBe(false);
-    });
-
-    it('should set creation timestamps', () => {
-      const before = new Date();
-      const template = Template.create(validParams);
-      const after = new Date();
-      
-      expect(template.getCreatedAt().getTime()).toBeGreaterThanOrEqual(before.getTime());
-      expect(template.getCreatedAt().getTime()).toBeLessThanOrEqual(after.getTime());
-      expect(template.getUpdatedAt().getTime()).toBe(template.getCreatedAt().getTime());
-    });
-  });
-
-  describe('updateName', () => {
-    it('should update name and timestamp', () => {
-      const template = Template.create(validParams);
-      const originalUpdatedAt = template.getUpdatedAt();
-      
-      // Wait to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 1));
-      
-      template.updateName('New Name');
-      
-      expect(template.getName().getValue()).toBe('New Name');
-      expect(template.getUpdatedAt().getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
-    });
-
-    it('should validate new name', () => {
-      const template = Template.create(validParams);
-      expect(() => template.updateName('')).toThrow('Template name cannot be empty');
-    });
-  });
-
-  describe('isOwnedBy', () => {
-    it('should return true for owner', () => {
-      const template = Template.create(validParams);
-      const userId = UserId.create('user-123');
-      expect(template.isOwnedBy(userId)).toBe(true);
-    });
-
-    it('should return false for non-owner', () => {
-      const template = Template.create(validParams);
-      const userId = UserId.create('user-456');
-      expect(template.isOwnedBy(userId)).toBe(false);
-    });
-  });
-
-  describe('canBeEditedBy', () => {
-    it('should allow owner to edit', () => {
-      const template = Template.create(validParams);
-      const userId = UserId.create('user-123');
-      expect(template.canBeEditedBy(userId)).toBe(true);
-    });
-
-    it('should not allow non-owner to edit', () => {
-      const template = Template.create(validParams);
-      const userId = UserId.create('user-456');
-      expect(template.canBeEditedBy(userId)).toBe(false);
-    });
-  });
-});
-```
-
-**🟢 THEN: Make Tests Pass**
-Create: `src/domain/entities/Template.ts`
-```typescript
-import { TemplateId } from '../valueObjects/TemplateId';
-import { TemplateName } from '../valueObjects/TemplateName';
-import { TemplateDescription } from '../valueObjects/TemplateDescription';
-import { UserId } from '../valueObjects/UserId';
 
 export interface TemplateMessage {
   role: 'user' | 'assistant' | 'system';
@@ -370,276 +159,141 @@ export interface TemplateArgument {
   type?: string;
 }
 
-export interface CreateTemplateParams {
-  name: string;
-  description?: string;
-  messages: TemplateMessage[];
-  arguments_: TemplateArgument[];
-  userId: string;
-  isPublic: boolean;
-}
-
-export class Template {
-  private constructor(
-    private readonly id: TemplateId,
-    private name: TemplateName,
-    private description: TemplateDescription | null,
-    private readonly userId: UserId,
-    private _isPublic: boolean,
-    private messages: TemplateMessage[],
-    private arguments_: TemplateArgument[],
-    private readonly createdAt: Date,
-    private updatedAt: Date
-  ) {}
-
-  static create(params: CreateTemplateParams): Template {
-    if (params.messages.length === 0) {
-      throw new Error('Template must have at least one message');
-    }
-
-    const now = new Date();
-    
-    return new Template(
-      TemplateId.generate(),
-      TemplateName.create(params.name),
-      params.description ? TemplateDescription.create(params.description) : null,
-      UserId.create(params.userId),
-      params.isPublic,
-      [...params.messages], // Copy to prevent external mutation
-      [...params.arguments_], // Copy to prevent external mutation
-      now,
-      now
-    );
+// Simple validation function
+export function validateTemplate(template: Partial<Template>): string[] {
+  const errors: string[] = [];
+  
+  if (!template.name?.trim()) {
+    errors.push('Name is required');
   }
-
-  // Getters
-  getId(): TemplateId { return this.id; }
-  getName(): TemplateName { return this.name; }
-  getDescription(): TemplateDescription | null { return this.description; }
-  getUserId(): UserId { return this.userId; }
-  isPublic(): boolean { return this._isPublic; }
-  getMessages(): TemplateMessage[] { return [...this.messages]; }
-  getArguments(): TemplateArgument[] { return [...this.arguments_]; }
-  getCreatedAt(): Date { return this.createdAt; }
-  getUpdatedAt(): Date { return this.updatedAt; }
-
-  // Business Methods
-  updateName(newName: string): void {
-    this.name = TemplateName.create(newName);
-    this.updatedAt = new Date();
+  
+  if (template.name && template.name.length > 100) {
+    errors.push('Name cannot exceed 100 characters');
   }
-
-  updateDescription(newDescription: string | null): void {
-    this.description = newDescription ? TemplateDescription.create(newDescription) : null;
-    this.updatedAt = new Date();
+  
+  if (!template.messages || template.messages.length === 0) {
+    errors.push('At least one message is required');
   }
-
-  isOwnedBy(userId: UserId): boolean {
-    return this.userId.equals(userId);
-  }
-
-  canBeEditedBy(userId: UserId): boolean {
-    return this.isOwnedBy(userId);
-  }
-
-  makePublic(): void {
-    this._isPublic = true;
-    this.updatedAt = new Date();
-  }
-
-  makePrivate(): void {
-    this._isPublic = false;
-    this.updatedAt = new Date();
-  }
+  
+  return errors;
 }
 ```
 
 ---
 
-## **PHASE 3: Repository Pattern**
+## **PHASE 2: Unified Service Layer**
 
-### **Step 3.1: Repository Interface**
+### **Step 2.1: Single Template Service**
 
-**🔴 FIRST: Write Repository Interface Test**
-Create: `src/domain/repositories/TemplateRepository.test.ts`
+**🔴 Test First**
 ```typescript
-// This is a contract test - tests the interface behavior
-import { TemplateRepository } from './TemplateRepository';
-import { Template } from '../entities/Template';
-import { TemplateId } from '../valueObjects/TemplateId';
-import { UserId } from '../valueObjects/UserId';
+// src/services/TemplateService.test.ts
+describe('TemplateService', () => {
+  let service: TemplateService;
+  let mockSupabase: any;
 
-// This will be extended by concrete implementation tests
-export abstract class TemplateRepositoryContractTest {
-  protected abstract createRepository(): TemplateRepository;
-  protected abstract cleanup(): Promise<void>;
+  beforeEach(() => {
+    mockSupabase = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+    };
+    service = new TemplateService(mockSupabase);
+  });
 
-  describe('TemplateRepository Contract', () => {
-    let repository: TemplateRepository;
-
-    beforeEach(() => {
-      repository = this.createRepository();
-    });
-
-    afterEach(async () => {
-      await this.cleanup();
-    });
-
-    it('should save and find template by id', async () => {
-      const template = Template.create({
+  describe('create', () => {
+    it('should create valid template', async () => {
+      const template = {
         name: 'Test Template',
         messages: [{ role: 'user', content: 'Hello' }],
-        arguments_: [],
+        arguments: [],
         userId: 'user-123',
         isPublic: false
+      };
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ data: { id: 'new-id' }, error: null })
       });
 
-      await repository.save(template);
-      const found = await repository.findById(template.getId());
-
-      expect(found).not.toBeNull();
-      expect(found!.getId().equals(template.getId())).toBe(true);
-      expect(found!.getName().getValue()).toBe('Test Template');
+      const result = await service.create(template);
+      expect(result.id).toBe('new-id');
     });
 
-    it('should return null for non-existent template', async () => {
-      const nonExistentId = TemplateId.generate();
-      const found = await repository.findById(nonExistentId);
-      expect(found).toBeNull();
-    });
-
-    it('should find templates by user', async () => {
-      const userId = UserId.create('user-123');
-      const template1 = Template.create({
-        name: 'Template 1',
-        messages: [{ role: 'user', content: 'Hello 1' }],
-        arguments_: [],
-        userId: userId.getValue(),
-        isPublic: false
-      });
-      const template2 = Template.create({
-        name: 'Template 2',
-        messages: [{ role: 'user', content: 'Hello 2' }],
-        arguments_: [],
-        userId: userId.getValue(),
-        isPublic: false
-      });
-
-      await repository.save(template1);
-      await repository.save(template2);
-
-      const userTemplates = await repository.findByUser(userId);
-      expect(userTemplates).toHaveLength(2);
-      expect(userTemplates.map(t => t.getName().getValue()).sort()).toEqual(['Template 1', 'Template 2']);
-    });
-
-    it('should delete template', async () => {
-      const template = Template.create({
-        name: 'To Delete',
-        messages: [{ role: 'user', content: 'Hello' }],
-        arguments_: [],
-        userId: 'user-123',
-        isPublic: false
-      });
-
-      await repository.save(template);
-      await repository.delete(template.getId());
+    it('should validate template before creating', async () => {
+      const template = { name: '' }; // Invalid
       
-      const found = await repository.findById(template.getId());
-      expect(found).toBeNull();
+      await expect(service.create(template))
+        .rejects.toThrow('Name is required');
     });
   });
-}
-```
 
-**🟢 THEN: Create Repository Interface**
-Create: `src/domain/repositories/TemplateRepository.ts`
-```typescript
-import { Template } from '../entities/Template';
-import { TemplateId } from '../valueObjects/TemplateId';
-import { UserId } from '../valueObjects/UserId';
+  describe('findByUser', () => {
+    it('should return user templates', async () => {
+      const mockData = [{ id: '1', name: 'Template 1' }];
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: mockData, error: null })
+      });
 
-export interface TemplateRepository {
-  findById(id: TemplateId): Promise<Template | null>;
-  findByUser(userId: UserId): Promise<Template[]>;
-  findPublic(): Promise<Template[]>;
-  save(template: Template): Promise<void>;
-  delete(id: TemplateId): Promise<void>;
-}
-```
-
-### **Step 3.2: Supabase Implementation**
-
-**🔴 FIRST: Write Implementation Test**
-Create: `src/infrastructure/repositories/SupabaseTemplateRepository.test.ts`
-```typescript
-import { SupabaseTemplateRepository } from './SupabaseTemplateRepository';
-import { TemplateRepositoryContractTest } from '../../domain/repositories/TemplateRepository.test';
-import { createClient } from '@supabase/supabase-js';
-
-// Mock Supabase for testing
-const mockSupabase = createClient('http://localhost', 'fake-key');
-
-class SupabaseTemplateRepositoryTest extends TemplateRepositoryContractTest {
-  protected createRepository() {
-    return new SupabaseTemplateRepository(mockSupabase);
-  }
-
-  protected async cleanup() {
-    // Clean up test data
-  }
-}
-
-// Run the contract tests
-const tests = new SupabaseTemplateRepositoryTest();
-tests.describe('SupabaseTemplateRepository', () => {
-  // Contract tests will be run here
-});
-
-describe('SupabaseTemplateRepository Specific Tests', () => {
-  it('should handle supabase errors gracefully', async () => {
-    // Test error handling specific to Supabase
-  });
-
-  it('should map domain objects to supabase format correctly', async () => {
-    // Test mapping logic
+      const result = await service.findByUser('user-123');
+      expect(result).toEqual(mockData);
+    });
   });
 });
 ```
 
-**🟢 THEN: Implement Supabase Repository**
-Create: `src/infrastructure/repositories/SupabaseTemplateRepository.ts`
+**🟢 Implementation**
 ```typescript
+// src/services/TemplateService.ts
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TemplateRepository } from '../../domain/repositories/TemplateRepository';
-import { Template } from '../../domain/entities/Template';
-import { TemplateId } from '../../domain/valueObjects/TemplateId';
-import { UserId } from '../../domain/valueObjects/UserId';
-import { Database } from '../supabase/types';
+import { Template, validateTemplate } from '../types/template';
 
-export class SupabaseTemplateRepository implements TemplateRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+export class TemplateService {
+  constructor(private supabase: SupabaseClient) {}
 
-  async findById(id: TemplateId): Promise<Template | null> {
+  async create(templateData: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>): Promise<Template> {
+    // Validate first
+    const errors = validateTemplate(templateData);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+
+    const payload = {
+      ...templateData,
+      template_data: {
+        messages: templateData.messages,
+        arguments: templateData.arguments
+      },
+      user_id: templateData.userId,
+      is_public: templateData.isPublic,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await this.supabase
       .from('prompt_templates')
-      .select('*')
-      .eq('id', id.getValue())
+      .insert([payload])
+      .select()
       .single();
 
-    if (error || !data) return null;
-    return this.mapToDomain(data);
+    if (error) throw new Error(`Failed to create template: ${error.message}`);
+    
+    return this.mapFromDb(data);
   }
 
-  async findByUser(userId: UserId): Promise<Template[]> {
+  async findByUser(userId: string): Promise<Template[]> {
     const { data, error } = await this.supabase
       .from('prompt_templates')
       .select('*')
-      .eq('user_id', userId.getValue())
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
-    if (error || !data) return [];
-    return data.map(row => this.mapToDomain(row));
+    if (error) throw new Error(`Failed to fetch templates: ${error.message}`);
+    
+    return data.map(row => this.mapFromDb(row));
   }
 
   async findPublic(): Promise<Template[]> {
@@ -649,61 +303,70 @@ export class SupabaseTemplateRepository implements TemplateRepository {
       .eq('is_public', true)
       .order('updated_at', { ascending: false });
 
-    if (error || !data) return [];
-    return data.map(row => this.mapToDomain(row));
+    if (error) throw new Error(`Failed to fetch public templates: ${error.message}`);
+    
+    return data.map(row => this.mapFromDb(row));
   }
 
-  async save(template: Template): Promise<void> {
-    const payload = this.mapToSupabase(template);
-    
-    const { error } = await this.supabase
+  async findById(id: string): Promise<Template | null> {
+    const { data, error } = await this.supabase
       .from('prompt_templates')
-      .upsert([payload]);
+      .select('*')
+      .eq('id', id)
+      .single();
 
     if (error) {
-      throw new Error(`Failed to save template: ${error.message}`);
+      if (error.code === 'PGRST116') return null; // Not found
+      throw new Error(`Failed to fetch template: ${error.message}`);
     }
+
+    return this.mapFromDb(data);
   }
 
-  async delete(id: TemplateId): Promise<void> {
+  async update(id: string, updates: Partial<Template>): Promise<Template> {
+    // Validate updates
+    const errors = validateTemplate(updates);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+
+    const payload = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await this.supabase
+      .from('prompt_templates')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to update template: ${error.message}`);
+    
+    return this.mapFromDb(data);
+  }
+
+  async delete(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('prompt_templates')
       .delete()
-      .eq('id', id.getValue());
+      .eq('id', id);
 
-    if (error) {
-      throw new Error(`Failed to delete template: ${error.message}`);
-    }
+    if (error) throw new Error(`Failed to delete template: ${error.message}`);
   }
 
-  private mapToDomain(row: any): Template {
-    // This is a reconstruction method - Template should have static fromPersistence method
-    return Template.fromPersistence({
+  private mapFromDb(row: any): Template {
+    return {
       id: row.id,
       name: row.name,
       description: row.description,
-      userId: row.user_id,
-      isPublic: row.is_public,
       messages: row.template_data?.messages || [],
-      arguments_: row.template_data?.arguments || [],
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
-    });
-  }
-
-  private mapToSupabase(template: Template): any {
-    return {
-      id: template.getId().getValue(),
-      name: template.getName().getValue(),
-      description: template.getDescription()?.getValue() || null,
-      user_id: template.getUserId().getValue(),
-      is_public: template.isPublic(),
-      template_data: {
-        messages: template.getMessages(),
-        arguments: template.getArguments()
-      },
-      created_at: template.getCreatedAt().toISOString(),
-      updated_at: template.getUpdatedAt().toISOString()
+      arguments: row.template_data?.arguments || [],
+      isPublic: row.is_public,
+      userId: row.user_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
     };
   }
 }
@@ -711,463 +374,427 @@ export class SupabaseTemplateRepository implements TemplateRepository {
 
 ---
 
-## **PHASE 4: Application Service**
+## **PHASE 3: Component Extraction**
 
-### **Step 4.1: Application Service**
+### **Step 3.1: Extract Dashboard Components**
 
-**🔴 FIRST: Write Application Service Test**
-Create: `src/application/TemplateApplicationService.test.ts`
+**🔴 Test Components**
 ```typescript
-import { TemplateApplicationService } from './TemplateApplicationService';
-import { TemplateRepository } from '../domain/repositories/TemplateRepository';
-import { Template } from '../domain/entities/Template';
-import { UserId } from '../domain/valueObjects/UserId';
-
-describe('TemplateApplicationService', () => {
-  let service: TemplateApplicationService;
-  let mockRepository: jest.Mocked<TemplateRepository>;
-
-  beforeEach(() => {
-    mockRepository = {
-      findById: jest.fn(),
-      findByUser: jest.fn(),
-      findPublic: jest.fn(),
-      save: jest.fn(),
-      delete: jest.fn()
-    };
-    service = new TemplateApplicationService(mockRepository);
+// src/components/Dashboard/DashboardHeader.test.tsx
+describe('DashboardHeader', () => {
+  it('should display user email', () => {
+    const user = { email: 'test@test.com' };
+    render(<DashboardHeader user={user} onSignOut={jest.fn()} onCreateNew={jest.fn()} />);
+    expect(screen.getByText('Welcome, test@test.com')).toBeInTheDocument();
   });
 
-  describe('createTemplate', () => {
-    it('should create and save template', async () => {
-      const command = {
-        name: 'Test Template',
-        description: 'Test description',
-        messages: [{ role: 'user' as const, content: 'Hello' }],
-        arguments_: [],
-        userId: 'user-123',
-        isPublic: false
-      };
-
-      await service.createTemplate(command);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          getName: expect.any(Function),
-          getDescription: expect.any(Function),
-          getUserId: expect.any(Function),
-          isPublic: expect.any(Function)
-        })
-      );
-    });
-
-    it('should reject invalid template data', async () => {
-      const command = {
-        name: '',
-        description: '',
-        messages: [],
-        arguments_: [],
-        userId: 'user-123',
-        isPublic: false
-      };
-
-      await expect(service.createTemplate(command)).rejects.toThrow();
-      expect(mockRepository.save).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getUserTemplates', () => {
-    it('should return user templates', async () => {
-      const userId = 'user-123';
-      const mockTemplates = [
-        Template.create({
-          name: 'Template 1',
-          messages: [{ role: 'user', content: 'Hello' }],
-          arguments_: [],
-          userId,
-          isPublic: false
-        })
-      ];
-      
-      mockRepository.findByUser.mockResolvedValue(mockTemplates);
-
-      const result = await service.getUserTemplates(userId);
-
-      expect(result).toHaveLength(1);
-      expect(mockRepository.findByUser).toHaveBeenCalledWith(
-        expect.objectContaining({ getValue: expect.any(Function) })
-      );
-    });
-  });
-
-  describe('updateTemplate', () => {
-    it('should update template if user is owner', async () => {
-      const template = Template.create({
-        name: 'Original',
-        messages: [{ role: 'user', content: 'Hello' }],
-        arguments_: [],
-        userId: 'user-123',
-        isPublic: false
-      });
-      
-      mockRepository.findById.mockResolvedValue(template);
-
-      await service.updateTemplate({
-        id: template.getId().getValue(),
-        name: 'Updated Name',
-        userId: 'user-123'
-      });
-
-      expect(template.getName().getValue()).toBe('Updated Name');
-      expect(mockRepository.save).toHaveBeenCalledWith(template);
-    });
-
-    it('should throw if user is not owner', async () => {
-      const template = Template.create({
-        name: 'Original',
-        messages: [{ role: 'user', content: 'Hello' }],
-        arguments_: [],
-        userId: 'user-123',
-        isPublic: false
-      });
-      
-      mockRepository.findById.mockResolvedValue(template);
-
-      await expect(service.updateTemplate({
-        id: template.getId().getValue(),
-        name: 'Updated Name',
-        userId: 'user-456' // Different user
-      })).rejects.toThrow('User not authorized to edit this template');
-    });
+  it('should call onCreateNew when new template clicked', () => {
+    const onCreateNew = jest.fn();
+    render(<DashboardHeader user={mockUser} onSignOut={jest.fn()} onCreateNew={onCreateNew} />);
+    fireEvent.click(screen.getByText('New Template'));
+    expect(onCreateNew).toHaveBeenCalled();
   });
 });
 ```
 
-**🟢 THEN: Implement Application Service**
-Create: `src/application/TemplateApplicationService.ts`
+**🟢 Create Small Components**
 ```typescript
-import { TemplateRepository } from '../domain/repositories/TemplateRepository';
-import { Template } from '../domain/entities/Template';
-import { TemplateId } from '../domain/valueObjects/TemplateId';
-import { UserId } from '../domain/valueObjects/UserId';
-
-export interface CreateTemplateCommand {
-  name: string;
-  description?: string;
-  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
-  arguments_: Array<{ name: string; description: string; required: boolean; type?: string }>;
-  userId: string;
-  isPublic: boolean;
+// src/components/Dashboard/DashboardHeader.tsx
+interface DashboardHeaderProps {
+  user: User;
+  onSignOut: () => void;
+  onCreateNew: () => void;
 }
 
-export interface UpdateTemplateCommand {
-  id: string;
-  name?: string;
-  description?: string | null;
-  userId: string;
+export function DashboardHeader({ user, onSignOut, onCreateNew }: DashboardHeaderProps) {
+  return (
+    <header className="border-b border-border bg-card/50 backdrop-blur">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold gradient-text">MCP Prompt Manager</h1>
+            <p className="text-sm text-muted-foreground">Welcome, {user.email}</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button onClick={onCreateNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Template
+            </Button>
+            <Button variant="outline" onClick={onSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+```
+
+```typescript
+// src/components/Dashboard/TemplateSearch.tsx
+interface TemplateSearchProps {
+  value: string;
+  onChange: (value: string) => void;
 }
 
-export class TemplateApplicationService {
-  constructor(private repository: TemplateRepository) {}
+export function TemplateSearch({ value, onChange }: TemplateSearchProps) {
+  return (
+    <div className="mb-6">
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search templates..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+    </div>
+  );
+}
+```
 
-  async createTemplate(command: CreateTemplateCommand): Promise<string> {
-    const template = Template.create({
-      name: command.name,
-      description: command.description,
-      messages: command.messages,
-      arguments_: command.arguments_,
-      userId: command.userId,
-      isPublic: command.isPublic
-    });
+```typescript
+// src/components/Dashboard/TemplateGrid.tsx
+interface TemplateGridProps {
+  templates: Template[];
+  currentUserId: string;
+  loading?: boolean;
+  emptyMessage?: string;
+  onEdit?: (template: Template) => void;
+  onDelete?: (template: Template) => void;
+  onView: (template: Template) => void;
+}
 
-    await this.repository.save(template);
-    return template.getId().getValue();
+export function TemplateGrid({ 
+  templates, 
+  currentUserId, 
+  loading, 
+  emptyMessage = "No templates found",
+  onEdit, 
+  onDelete, 
+  onView 
+}: TemplateGridProps) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </div>
+    );
   }
 
-  async getUserTemplates(userId: string): Promise<Template[]> {
-    const userIdVO = UserId.create(userId);
-    return await this.repository.findByUser(userIdVO);
+  if (templates.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">{emptyMessage}</p>
+      </div>
+    );
   }
 
-  async getPublicTemplates(): Promise<Template[]> {
-    return await this.repository.findPublic();
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {templates.map((template) => (
+        <TemplateCard
+          key={template.id}
+          template={template}
+          isOwner={template.userId === currentUserId}
+          onEdit={template.userId === currentUserId ? onEdit : undefined}
+          onDelete={template.userId === currentUserId ? onDelete : undefined}
+          onView={onView}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+```typescript
+// src/components/Dashboard/Dashboard.tsx (Simplified)
+export function Dashboard({ user, onSignOut }: DashboardProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
+  const {
+    myTemplates,
+    publicTemplates,
+    loading,
+    refetch
+  } = useTemplates(user.id);
+
+  const filteredMyTemplates = useFilteredTemplates(myTemplates, searchQuery);
+  const filteredPublicTemplates = useFilteredTemplates(publicTemplates, searchQuery);
+
+  const handleCreateNew = () => {
+    setSelectedTemplate(null);
+    setViewMode('editor');
+  };
+
+  // ... other handlers (simplified)
+
+  if (viewMode === 'editor') {
+    return (
+      <TemplateEditor
+        template={selectedTemplate}
+        onSave={() => {
+          setViewMode('dashboard');
+          refetch();
+        }}
+        onCancel={() => setViewMode('dashboard')}
+      />
+    );
   }
 
-  async getTemplate(id: string): Promise<Template | null> {
-    const templateId = TemplateId.create(id);
-    return await this.repository.findById(templateId);
-  }
-
-  async updateTemplate(command: UpdateTemplateCommand): Promise<void> {
-    const templateId = TemplateId.create(command.id);
-    const userId = UserId.create(command.userId);
-    
-    const template = await this.repository.findById(templateId);
-    if (!template) {
-      throw new Error('Template not found');
-    }
-
-    if (!template.canBeEditedBy(userId)) {
-      throw new Error('User not authorized to edit this template');
-    }
-
-    if (command.name !== undefined) {
-      template.updateName(command.name);
-    }
-
-    if (command.description !== undefined) {
-      template.updateDescription(command.description);
-    }
-
-    await this.repository.save(template);
-  }
-
-  async deleteTemplate(id: string, userId: string): Promise<void> {
-    const templateId = TemplateId.create(id);
-    const userIdVO = UserId.create(userId);
-    
-    const template = await this.repository.findById(templateId);
-    if (!template) {
-      throw new Error('Template not found');
-    }
-
-    if (!template.canBeEditedBy(userIdVO)) {
-      throw new Error('User not authorized to delete this template');
-    }
-
-    await this.repository.delete(templateId);
-  }
+  return (
+    <div className="min-h-screen bg-background">
+      <DashboardHeader 
+        user={user} 
+        onSignOut={onSignOut} 
+        onCreateNew={handleCreateNew} 
+      />
+      
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <TemplateSearch value={searchQuery} onChange={setSearchQuery} />
+        
+        <Tabs defaultValue="my-templates">
+          <TabsList>
+            <TabsTrigger value="my-templates">
+              My Templates ({myTemplates.length})
+            </TabsTrigger>
+            <TabsTrigger value="public-templates">
+              Public Templates ({publicTemplates.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="my-templates" className="mt-6">
+            <TemplateGrid
+              templates={filteredMyTemplates}
+              currentUserId={user.id}
+              loading={loading}
+              emptyMessage="You haven't created any templates yet."
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onView={handleView}
+            />
+          </TabsContent>
+          
+          <TabsContent value="public-templates" className="mt-6">
+            <TemplateGrid
+              templates={filteredPublicTemplates}
+              currentUserId={user.id}
+              loading={loading}
+              emptyMessage="No public templates available yet."
+              onView={handleView}
+            />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
 }
 ```
 
 ---
 
-## **PHASE 5: UI Integration**
+## **PHASE 4: Custom Hooks**
 
-### **Step 5.1: Update TemplateEditor Component**
+### **Step 4.1: Extract Business Logic to Hooks**
 
-**Goal: Remove business logic from UI, use Application Service**
-
-**🔴 FIRST: Update TemplateEditor Test**
-Update: `src/components/templates/TemplateEditor.test.tsx`
 ```typescript
-// Add mocks for application service
-const mockTemplateService = {
-  createTemplate: jest.fn(),
-  updateTemplate: jest.fn(),
-};
+// src/hooks/useTemplates.ts
+export function useTemplates(userId: string) {
+  const templateService = useTemplateService();
 
-// Update tests to verify service calls instead of direct validation
-it('should call createTemplate service on save', async () => {
-  // Test that component calls service correctly
-});
+  const {
+    data: myTemplates = [],
+    isLoading: myLoading,
+    refetch: refetchMy
+  } = useQuery({
+    queryKey: ['templates', userId],
+    queryFn: () => templateService.findByUser(userId)
+  });
 
-it('should display domain validation errors', async () => {
-  mockTemplateService.createTemplate.mockRejectedValue(new Error('Template name cannot be empty'));
-  // Test that domain errors are displayed properly
-});
+  const {
+    data: publicTemplates = [],
+    isLoading: publicLoading,
+    refetch: refetchPublic
+  } = useQuery({
+    queryKey: ['templates', 'public'],
+    queryFn: () => templateService.findPublic()
+  });
+
+  return {
+    myTemplates,
+    publicTemplates,
+    loading: myLoading || publicLoading,
+    refetch: () => {
+      refetchMy();
+      refetchPublic();
+    }
+  };
+}
 ```
 
-**🟢 THEN: Refactor TemplateEditor**
-Update: `src/components/templates/TemplateEditor.tsx`
 ```typescript
-// Remove validation logic - let domain handle it
-const handleSave = async () => {
-  setLoading(true);
-  
-  try {
-    const { data: { user } } = await getUser();
-    if (!user) {
+// src/hooks/useTemplateOperations.ts
+export function useTemplateOperations() {
+  const templateService = useTemplateService();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const createTemplate = useMutation({
+    mutationFn: templateService.create.bind(templateService),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['templates']);
+      toast({
+        title: "Success",
+        description: "Template created successfully"
+      });
+    },
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to save templates"
+        title: "Error",
+        description: error.message
       });
-      return;
     }
+  });
 
-    const command = {
-      name,
-      description,
-      messages,
-      arguments_,
-      userId: user.id,
-      isPublic
-    };
-
-    if (template?.id) {
-      await templateApplicationService.updateTemplate({
-        ...command,
-        id: template.id
+  const updateTemplate = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Template> }) =>
+      templateService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['templates']);
+      toast({
+        title: "Success", 
+        description: "Template updated successfully"
       });
-      toast({ title: "Success", description: "Template updated successfully" });
-    } else {
-      await templateApplicationService.createTemplate(command);
-      toast({ title: "Success", description: "Template created successfully" });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
     }
-    
-    onSave();
-  } catch (error: Error) {
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: error.message // Domain error messages are now shown directly
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-```
+  });
 
----
-
-## **PHASE 6: Dependency Injection Setup**
-
-### **Step 6.1: Simple Service Container**
-
-Create: `src/infrastructure/ServiceContainer.ts`
-```typescript
-export class ServiceContainer {
-  private static instance: ServiceContainer;
-  private services = new Map<string, any>();
-
-  static getInstance(): ServiceContainer {
-    if (!ServiceContainer.instance) {
-      ServiceContainer.instance = new ServiceContainer();
+  const deleteTemplate = useMutation({
+    mutationFn: templateService.delete.bind(templateService),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['templates']);
+      toast({
+        title: "Success",
+        description: "Template deleted successfully"
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error", 
+        description: error.message
+      });
     }
-    return ServiceContainer.instance;
-  }
+  });
 
-  register<T>(token: string, factory: () => T): void {
-    this.services.set(token, factory);
-  }
-
-  resolve<T>(token: string): T {
-    const factory = this.services.get(token);
-    if (!factory) {
-      throw new Error(`Service not registered: ${token}`);
-    }
-    return factory();
-  }
+  return {
+    createTemplate,
+    updateTemplate,
+    deleteTemplate
+  };
 }
-
-// Setup services
-const container = ServiceContainer.getInstance();
-
-container.register('supabase', () => supabase);
-container.register('templateRepository', () => 
-  new SupabaseTemplateRepository(container.resolve('supabase'))
-);
-container.register('templateApplicationService', () => 
-  new TemplateApplicationService(container.resolve('templateRepository'))
-);
 ```
 
 ---
 
 ## 🎯 **Implementation Checklist**
 
-### **Phase 1: Value Objects** ✅ **PRIORITY 1**
-- [ ] TemplateName with tests (TDD)
-- [ ] TemplateDescription with tests (TDD)
-- [ ] TemplateId with tests (TDD)
-- [ ] UserId with tests (TDD)
-- [ ] All tests passing
-- [ ] 100% code coverage on value objects
+### **Phase 1: Simplify Models** ✅ **PRIORITY 1**
+- [ ] Remove all value objects (TemplateName, TemplateId, etc.)
+- [ ] Remove domain entities layer
+- [ ] Create simple Template interface
+- [ ] Add validation function
+- [ ] Update all existing tests
 
-### **Phase 2: Domain Entity** ✅ **PRIORITY 1**
-- [ ] Template entity with tests (TDD)
-- [ ] Business methods implemented
-- [ ] Domain validation logic moved from UI
-- [ ] All tests passing
-- [ ] Template.fromPersistence method for reconstruction
+### **Phase 2: Unified Service** ✅ **PRIORITY 1**  
+- [ ] Remove TemplateApplicationService
+- [ ] Remove templateServiceAdapter
+- [ ] Create single TemplateService class
+- [ ] Move all operations to one place
+- [ ] Add comprehensive tests
 
-### **Phase 3: Repository Pattern** ✅ **PRIORITY 2**
-- [ ] Repository interface with contract tests
-- [ ] SupabaseTemplateRepository implementation
-- [ ] Integration tests passing
-- [ ] Error handling implemented
+### **Phase 3: Component Extraction** ✅ **PRIORITY 2**
+- [ ] Extract DashboardHeader (< 50 lines)
+- [ ] Extract TemplateSearch (< 30 lines)
+- [ ] Extract TemplateGrid (< 80 lines)
+- [ ] Simplify main Dashboard (< 100 lines)
+- [ ] Test all extracted components
 
-### **Phase 4: Application Service** ✅ **PRIORITY 2**
-- [ ] TemplateApplicationService with tests
-- [ ] Use cases implemented
-- [ ] Authorization logic in place
-- [ ] All tests passing
+### **Phase 4: Custom Hooks** ✅ **PRIORITY 2**
+- [ ] Create useTemplates hook
+- [ ] Create useTemplateOperations hook
+- [ ] Move business logic from components
+- [ ] Add hook tests
 
-### **Phase 5: UI Integration** ✅ **PRIORITY 3**
-- [ ] TemplateEditor refactored
-- [ ] Dashboard refactored
-- [ ] Business logic removed from components
-- [ ] Clean separation of concerns
-
-### **Phase 6: Dependency Injection** ✅ **PRIORITY 3**
-- [ ] Service container implemented
-- [ ] Services wired up correctly
-- [ ] Easy to test with mocks
+### **Phase 5: Cleanup** ✅ **PRIORITY 3**
+- [ ] Remove unused files
+- [ ] Remove dependency injection container
+- [ ] Update imports across app
+- [ ] Verify all tests pass
 
 ---
 
 ## 🚀 **Success Criteria**
 
-### **Code Quality Metrics**
-- [ ] All functions < 20 lines
-- [ ] All classes have single responsibility
-- [ ] Zero code duplication
-- [ ] 100% test coverage for business logic
-- [ ] All tests passing (Green build)
+### **Simplicity Metrics**
+- [ ] 50%+ reduction in total lines of code
+- [ ] No file > 150 lines
+- [ ] No function > 20 lines
+- [ ] Zero abstract classes or complex inheritance
+- [ ] Single source of truth for each concept
 
-### **Architecture Quality**
-- [ ] Business rules in domain layer only
-- [ ] UI components have no business logic
-- [ ] Database can be swapped without domain changes
-- [ ] Clear separation of concerns
-- [ ] Easy to add new features without breaking existing code
+### **Quality Metrics**
+- [ ] All tests passing
+- [ ] 100% test coverage on business logic
+- [ ] Zero linting errors
+- [ ] No code duplication
+- [ ] Clear, self-documenting names
 
-### **XP Practices Followed**
-- [ ] TDD used for all new code
-- [ ] Refactoring done only with passing tests
-- [ ] Small incremental changes
-- [ ] Continuous integration maintained
-- [ ] Simple design evolved organically
-
----
-
-## 📝 **Notes for Autonomous Agent**
-
-### **Working Style**
-1. **Always start with failing test**
-2. **Write minimum code to pass**
-3. **Refactor only with green tests**
-4. **One small change at a time**
-5. **Keep all existing tests passing**
-
-### **When in Doubt**
-- Choose simplicity over cleverness
-- Prefer composition over inheritance
-- Keep functions small and focused
-- Make intent clear through naming
-- Ask "What would Kent Beck do?"
-
-### **Red Flags to Avoid**
-- Functions > 20 lines
-- Classes with multiple responsibilities
-- Business logic in UI components
-- Direct database calls from components
-- Any `any` types in new code
-- Duplicated validation logic
+### **XP Practices**
+- [ ] TDD used throughout
+- [ ] Small, focused commits
+- [ ] Continuous refactoring
+- [ ] Simple design that works
+- [ ] Easy to understand for new developers
 
 ---
 
-## 🔄 **Rollback Strategy**
+## 🔄 **Benefits After Refactoring**
 
-If any phase fails or causes issues:
-1. **Revert to last green build**
-2. **Analyze what went wrong**
-3. **Make smaller incremental change**
-4. **Ensure all tests pass before continuing**
-
-Each phase should be independently deployable and reversible.
+1. **Faster Development**: Less boilerplate, more direct code
+2. **Easier Testing**: Simple functions are easy to test
+3. **Better Onboarding**: New developers understand the code quickly
+4. **Fewer Bugs**: Less complexity = fewer places for bugs to hide
+5. **Easier Changes**: Simple code is easy to modify
 
 ---
 
-**Remember: The goal is not just working code, but code that is easy to understand, modify, and extend. Every line should serve the purpose of making the next developer's (including your future self's) job easier.**
+## 📝 **Key Differences from Over-Engineered Approach**
+
+| Over-Engineered | Simple XP Approach |
+|-----------------|-------------------|
+| Value Objects for everything | Simple interfaces + validation functions |
+| Repository Pattern | Direct service calls to database |
+| Dependency Injection Container | Direct imports and React Context |
+| Domain Entities with complex logic | Plain data + business logic in services |
+| Multiple service layers | One service per domain |
+| Abstract interfaces everywhere | Concrete classes with clear responsibilities |
+
+---
+
+**Remember: We're building a prompt management app, not an enterprise banking system. Choose simplicity, and let complexity emerge only when it's truly needed.**
