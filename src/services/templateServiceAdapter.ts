@@ -1,11 +1,12 @@
 import { TemplateApplicationService } from '../application/services/TemplateApplicationService';
-import { SupabaseTemplateRepository } from '../infrastructure/repositories/SupabaseTemplateRepository';
 import { Template } from '../domain/entities/Template';
 import { MCPTemplate } from '../types/template';
+import { appContainer } from '../infrastructure/di/AppContainer';
 
-// Create repository and service instances
-const repository = new SupabaseTemplateRepository();
-const templateApplicationService = new TemplateApplicationService(repository);
+// Get service instance from DI container
+const getTemplateApplicationService = (): TemplateApplicationService => {
+  return appContainer.resolve<TemplateApplicationService>('TemplateApplicationService');
+};
 
 // Helper function to convert Domain Template to MCPTemplate format
 function convertToMCPTemplate(template: Template): MCPTemplate {
@@ -27,7 +28,8 @@ function convertToMCPTemplate(template: Template): MCPTemplate {
 // Adapter functions that maintain the original interface
 export async function fetchUserTemplates(userId: string) {
   try {
-    const templates = await templateApplicationService.getUserTemplates(userId);
+    const service = getTemplateApplicationService();
+    const templates = await service.getUserTemplates(userId);
     const mcpTemplates = templates.map(convertToMCPTemplate);
     return { data: mcpTemplates, error: null };
   } catch (error: any) {
@@ -37,7 +39,8 @@ export async function fetchUserTemplates(userId: string) {
 
 export async function fetchPublicTemplates() {
   try {
-    const templates = await templateApplicationService.getPublicTemplates();
+    const service = getTemplateApplicationService();
+    const templates = await service.getPublicTemplates();
     const mcpTemplates = templates.map(convertToMCPTemplate);
     return { data: mcpTemplates, error: null };
   } catch (error: any) {
@@ -47,6 +50,7 @@ export async function fetchPublicTemplates() {
 
 export async function saveTemplate(payload: any, id?: string) {
   try {
+    const service = getTemplateApplicationService();
     if (id) {
       // Update existing template
       const updateParams = {
@@ -54,7 +58,7 @@ export async function saveTemplate(payload: any, id?: string) {
         name: payload.name,
         description: payload.description,
       };
-      await templateApplicationService.updateTemplate(updateParams);
+      await service.updateTemplate(updateParams);
     } else {
       // Create new template
       const createParams = {
@@ -65,7 +69,7 @@ export async function saveTemplate(payload: any, id?: string) {
         userId: payload.user_id,
         isPublic: payload.is_public || false,
       };
-      await templateApplicationService.createTemplate(createParams);
+      await service.createTemplate(createParams);
     }
     return { data: null, error: null };
   } catch (error: any) {
@@ -75,7 +79,8 @@ export async function saveTemplate(payload: any, id?: string) {
 
 export async function deleteTemplate(id: string) {
   try {
-    await templateApplicationService.deleteTemplate(id);
+    const service = getTemplateApplicationService();
+    await service.deleteTemplate(id);
     return { data: null, error: null };
   } catch (error: any) {
     return { data: null, error: { message: error.message || 'Failed to delete template' } };
