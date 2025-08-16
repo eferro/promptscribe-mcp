@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { getSession, onAuthStateChange, signOut } from "@/services/authService";
 import AuthForm from "@/components/auth/AuthForm";
-import Dashboard from "@/pages/Dashboard";
+// Lazy load Dashboard to reduce initial bundle size
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 
 const Index = () => {
@@ -117,7 +118,18 @@ const Index = () => {
     );
   }
 
-  return <Dashboard user={user} onSignOut={handleSignOut} />;
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <Dashboard user={user} onSignOut={handleSignOut} />
+    </Suspense>
+  );
 };
 
 export default Index;

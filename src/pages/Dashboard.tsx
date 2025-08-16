@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTemplateService } from "@/hooks/useServices";
-import TemplateEditor from "@/components/templates/TemplateEditor";
-import TemplateViewer from "@/components/templates/TemplateViewer";
+// Lazy load heavy components to improve initial load
+const TemplateEditor = lazy(() => import("@/components/templates/TemplateEditor"));
+const TemplateViewer = lazy(() => import("@/components/templates/TemplateViewer"));
 import DeleteConfirmDialog from "@/components/templates/DeleteConfirmDialog";
 import { DashboardHeader } from "@/components/Dashboard/DashboardHeader";
 import { TemplateGrid } from "@/components/Dashboard/TemplateGrid";
@@ -127,24 +128,42 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
 
   if (viewMode === 'editor') {
     return (
-      <TemplateEditor
-        template={selectedTemplate || undefined}
-        onSave={handleSave}
-        onCancel={handleCancel}
-        onDelete={handleDelete}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading editor...</p>
+          </div>
+        </div>
+      }>
+        <TemplateEditor
+          template={selectedTemplate || undefined}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
+        />
+      </Suspense>
     );
   }
 
   if (viewMode === 'viewer' && selectedTemplate) {
     return (
-      <TemplateViewer
-        template={selectedTemplate}
-        user={user}
-        onBack={handleCancel}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading viewer...</p>
+          </div>
+        </div>
+      }>
+        <TemplateViewer
+          template={selectedTemplate}
+          user={user}
+          onBack={handleCancel}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </Suspense>
     );
   }
 
