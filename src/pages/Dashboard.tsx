@@ -46,11 +46,11 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
 
       setMyTemplates(userTemplates || []);
       setPublicTemplates(publicData || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to load templates"
+        description: error instanceof Error ? error.message : "Failed to load templates"
       });
     } finally {
       setLoading(false);
@@ -103,11 +103,11 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
       }
       
       fetchTemplates();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to delete template"
+        description: error instanceof Error ? error.message : "Failed to delete template"
       });
     } finally {
       setDeleteDialogOpen(false);
