@@ -87,7 +87,7 @@ describe('TemplateViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     writeTextMock.mockClear();
-    (useToast as any).mockReturnValue({ toast: mockToast });
+    vi.mocked(useToast).mockReturnValue({ toast: mockToast });
   });
 
   it('renders template viewer with all components', () => {

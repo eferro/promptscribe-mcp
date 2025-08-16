@@ -156,7 +156,7 @@ describe('PasswordChangeForm', () => {
       data: { user: null }, 
       error: { 
         message: 'Password update failed'
-      } as any
+      }
     });
     
     render(

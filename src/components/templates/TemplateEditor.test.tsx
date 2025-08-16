@@ -48,8 +48,8 @@ const mockTemplate = {
 describe('TemplateEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (useToast as any).mockReturnValue({ toast: mockToast });
-    (getUser as any).mockResolvedValue({
+    vi.mocked(useToast).mockReturnValue({ toast: mockToast });
+    vi.mocked(getUser).mockResolvedValue({
       data: { user: { id: 'user123' } }
     });
     mockTemplateService.create.mockResolvedValue(mockTemplate);
@@ -359,7 +359,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles authentication error when user is not logged in', async () => {
-    (getUser as any).mockResolvedValue({
+    vi.mocked(getUser).mockResolvedValue({
       data: { user: null }
     });
     
@@ -407,7 +407,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles unexpected errors during save', async () => {
-    (getUser as any).mockRejectedValue(new Error('Network error'));
+    vi.mocked(getUser).mockRejectedValue(new Error('Network error'));
     
     const user = userEvent.setup();
     render(

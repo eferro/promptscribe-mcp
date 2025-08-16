@@ -25,8 +25,13 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 // Mock the template components
+interface MockTemplateEditorProps {
+  onSave: () => void;
+  onCancel: () => void;
+}
+
 vi.mock('@/components/templates/TemplateEditor', () => ({
-  default: ({ onSave, onCancel }: any) => (
+  default: ({ onSave, onCancel }: MockTemplateEditorProps) => (
     <div data-testid="template-editor">
       <button onClick={onSave}>Save</button>
       <button onClick={onCancel}>Cancel</button>
@@ -34,8 +39,13 @@ vi.mock('@/components/templates/TemplateEditor', () => ({
   )
 }));
 
+interface MockTemplateViewerProps {
+  onBack: () => void;
+  onEdit: (template: typeof mockTemplate) => void;
+}
+
 vi.mock('@/components/templates/TemplateViewer', () => ({
-  default: ({ onBack, onEdit }: any) => (
+  default: ({ onBack, onEdit }: MockTemplateViewerProps) => (
     <div data-testid="template-viewer">
       <button onClick={onBack}>Back</button>
       <button onClick={() => onEdit(mockTemplate)}>Edit</button>
@@ -43,8 +53,15 @@ vi.mock('@/components/templates/TemplateViewer', () => ({
   )
 }));
 
+interface MockTemplateCardProps {
+  template: typeof mockTemplate;
+  onEdit?: (template: typeof mockTemplate) => void;
+  onDelete?: (template: typeof mockTemplate) => void;
+  onView: (template: typeof mockTemplate) => void;
+}
+
 vi.mock('@/components/templates/TemplateCard', () => ({
-  default: ({ template, onEdit, onDelete, onView }: any) => (
+  default: ({ template, onEdit, onDelete, onView }: MockTemplateCardProps) => (
     <div data-testid={`template-card-${template.id}`}>
       <h3>{template.name}</h3>
       <button onClick={() => onView(template)}>View</button>

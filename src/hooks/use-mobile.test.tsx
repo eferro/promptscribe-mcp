@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useIsMobile } from './use-mobile';
 
 describe('useIsMobile', () => {
-  let mockMatchMedia: any;
-  let listeners: any[] = [];
+  let mockMatchMedia: ReturnType<typeof vi.fn>;
+  let listeners: (() => void)[] = [];
 
   beforeEach(() => {
     listeners = [];
@@ -13,12 +13,12 @@ describe('useIsMobile', () => {
       matches: false,
       media: query,
       onchange: null,
-      addEventListener: vi.fn((event: string, handler: any) => {
+      addEventListener: vi.fn((event: string, handler: () => void) => {
         if (event === 'change') {
           listeners.push(handler);
         }
       }),
-      removeEventListener: vi.fn((event: string, handler: any) => {
+      removeEventListener: vi.fn((event: string, handler: () => void) => {
         if (event === 'change') {
           const index = listeners.indexOf(handler);
           if (index > -1) {

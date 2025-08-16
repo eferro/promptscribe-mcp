@@ -11,16 +11,25 @@ vi.mock('@/services/authService', () => ({
 }));
 
 // Mock the components
+interface MockAuthFormProps {
+  onAuthSuccess: () => void;
+}
+
 vi.mock('@/components/auth/AuthForm', () => ({
-  default: ({ onAuthSuccess }: any) => (
+  default: ({ onAuthSuccess }: MockAuthFormProps) => (
     <div data-testid="auth-form">
       <button onClick={onAuthSuccess}>Sign In Success</button>
     </div>
   )
 }));
 
+interface MockDashboardProps {
+  user: typeof mockUser;
+  onSignOut: () => void;
+}
+
 vi.mock('@/pages/Dashboard', () => ({
-  default: ({ user, onSignOut }: any) => (
+  default: ({ user, onSignOut }: MockDashboardProps) => (
     <div data-testid="dashboard">
       <span>Dashboard for {user.email}</span>
       <button onClick={onSignOut}>Sign Out</button>
@@ -28,8 +37,13 @@ vi.mock('@/pages/Dashboard', () => ({
   )
 }));
 
+interface MockPasswordChangeFormProps {
+  onPasswordChanged: () => void;
+  onCancel: () => void;
+}
+
 vi.mock('@/components/auth/PasswordChangeForm', () => ({
-  default: ({ onPasswordChanged, onCancel }: any) => (
+  default: ({ onPasswordChanged, onCancel }: MockPasswordChangeFormProps) => (
     <div data-testid="password-change-form">
       <button onClick={onPasswordChanged}>Password Changed</button>
       <button onClick={onCancel}>Cancel</button>
@@ -60,9 +74,9 @@ const IndexWrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('Index', () => {
-  let mockOnAuthStateChange: any;
-  let mockGetSession: any;
-  let mockSignOut: any;
+  let mockOnAuthStateChange: ReturnType<typeof vi.fn>;
+  let mockGetSession: ReturnType<typeof vi.fn>;
+  let mockSignOut: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
