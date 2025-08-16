@@ -1,6 +1,33 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Template, validateTemplate } from '../types/template';
 
+// Database row type for template data
+interface TemplateDbRow {
+  id: string;
+  name: string;
+  description: string | null;
+  template_data: {
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    arguments: Array<{ name: string; description: string; required: boolean; type?: string }>;
+  } | null;
+  is_public: boolean;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Update payload type for database
+interface TemplateUpdatePayload {
+  updated_at: string;
+  name?: string;
+  description?: string | null;
+  is_public?: boolean;
+  template_data?: {
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    arguments: Array<{ name: string; description: string; required: boolean; type?: string }>;
+  };
+}
+
 export class TemplateService {
   constructor(private supabase: SupabaseClient) {}
 
@@ -81,7 +108,7 @@ export class TemplateService {
       throw new Error(errors.join(', '));
     }
 
-    const payload: any = {
+    const payload: TemplateUpdatePayload = {
       updated_at: new Date().toISOString()
     };
 
@@ -117,7 +144,7 @@ export class TemplateService {
     if (error) throw new Error(`Failed to delete template: ${error.message}`);
   }
 
-  private mapFromDb(row: any): Template {
+  private mapFromDb(row: TemplateDbRow): Template {
     return {
       id: row.id,
       name: row.name,
