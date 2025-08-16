@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from "@/services/templateService";
+import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from "@/services/templateServiceAdapter";
 import { Plus, Search, LogOut } from "lucide-react";
 import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";

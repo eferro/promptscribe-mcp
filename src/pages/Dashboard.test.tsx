@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
-import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from '@/services/templateService';
+import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from '@/services/templateServiceAdapter';
 
-vi.mock('@/services/templateService', () => ({
+vi.mock('@/services/templateServiceAdapter', () => ({
   fetchUserTemplates: vi.fn(),
   fetchPublicTemplates: vi.fn(),
   deleteTemplate: vi.fn(),

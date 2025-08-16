@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TemplateEditor from './TemplateEditor';
 import { useToast } from "@/hooks/use-toast";
 import { getUser } from "@/services/authService";
-import { saveTemplate } from "@/services/templateService";
+import { saveTemplate } from "@/services/templateServiceAdapter";
 
 // Mock dependencies
 vi.mock("@/hooks/use-toast");
@@ -12,7 +12,7 @@ vi.mock("@/services/authService", () => ({
   getUser: vi.fn(),
 }));
 
-vi.mock("@/services/templateService", () => ({
+vi.mock("@/services/templateServiceAdapter", () => ({
   saveTemplate: vi.fn(),
 }));
 

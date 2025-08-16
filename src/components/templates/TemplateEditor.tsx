@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import useTemplateEditor from '@/hooks/useTemplateEditor';
 import { getUser } from "@/services/authService";
-import { saveTemplate } from "@/services/templateService";
+import { saveTemplate } from "@/services/templateServiceAdapter";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { MCPTemplate, TemplateData } from '@/types/template';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
