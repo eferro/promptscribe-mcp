@@ -27,8 +27,8 @@ describe('Supabase Client', () => {
   it('uses Vite environment variables for configuration', () => {
     // In Vitest with Vite, import.meta.env exposes VITE_* vars if defined for the test env.
     // We only assert that the client has non-empty configuration.
-    expect((supabase as any).supabaseUrl).toBeTruthy();
-    expect((supabase as any).supabaseKey).toBeTruthy();
+    expect((supabase as Record<string, unknown>)['supabaseUrl']).toBeTruthy();
+    expect((supabase as Record<string, unknown>)['supabaseKey']).toBeTruthy();
   });
 
   it('has auth methods available', () => {
