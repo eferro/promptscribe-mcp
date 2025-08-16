@@ -1,72 +1,49 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DashboardHeader } from './DashboardHeader';
 
-const mockUser = {
-  id: 'user-123',
-  email: 'test@example.com',
-  app_metadata: {},
-  user_metadata: {},
-  aud: 'authenticated',
-  created_at: '2023-01-01T00:00:00Z'
-};
-
 describe('DashboardHeader', () => {
+  const mockUser = { email: 'test@example.com' };
+  const mockOnSignOut = vi.fn();
+  const mockOnCreateNew = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should display user email', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
+    render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
     expect(screen.getByText('Welcome, test@example.com')).toBeInTheDocument();
   });
 
-  it('should display app title', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
-    expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
-  });
-
   it('should call onCreateNew when new template clicked', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
+    render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
     fireEvent.click(screen.getByText('New Template'));
-    expect(onCreateNew).toHaveBeenCalledOnce();
+    expect(mockOnCreateNew).toHaveBeenCalled();
   });
 
   it('should call onSignOut when sign out clicked', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
+    render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
     fireEvent.click(screen.getByText('Sign Out'));
-    expect(onSignOut).toHaveBeenCalledOnce();
+    expect(mockOnSignOut).toHaveBeenCalled();
   });
 
-  it('should render new template button with plus icon', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
-    const newTemplateButton = screen.getByText('New Template');
-    expect(newTemplateButton).toBeInTheDocument();
+  it('should render proper UI structure', () => {
+    render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
+    expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /New Template/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign Out/i })).toBeInTheDocument();
   });
 
-  it('should render sign out button with logout icon', () => {
-    const onSignOut = vi.fn();
-    const onCreateNew = vi.fn();
-    
-    render(<DashboardHeader user={mockUser} onSignOut={onSignOut} onCreateNew={onCreateNew} />);
-    
-    const signOutButton = screen.getByText('Sign Out');
-    expect(signOutButton).toBeInTheDocument();
+  it('should render header with proper CSS classes', () => {
+    render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
+    const header = screen.getByRole('banner');
+    expect(header).toHaveClass('border-b', 'border-border', 'bg-card/50', 'backdrop-blur');
+  });
+
+  it('should display user email with proper text', () => {
+    const userWithDifferentEmail = { email: 'different@test.com' };
+    render(<DashboardHeader user={userWithDifferentEmail} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
+    expect(screen.getByText('Welcome, different@test.com')).toBeInTheDocument();
   });
 });

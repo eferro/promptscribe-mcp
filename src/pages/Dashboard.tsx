@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTemplateService } from "@/hooks/useServices";
-import { Plus, Search, LogOut } from "lucide-react";
-import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";
 import TemplateViewer from "@/components/templates/TemplateViewer";
 import DeleteConfirmDialog from "@/components/templates/DeleteConfirmDialog";
+import { DashboardHeader } from "@/components/Dashboard/DashboardHeader";
+import { TemplateGrid } from "@/components/Dashboard/TemplateGrid";
+import { TemplateSearch } from "@/components/Dashboard/TemplateSearch";
+import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
 import { Template } from '@/types/template';
 
@@ -20,16 +20,23 @@ interface DashboardProps {
 type ViewMode = 'dashboard' | 'editor' | 'viewer';
 
 export default function Dashboard({ user, onSignOut }: DashboardProps) {
-  const [myTemplates, setMyTemplates] = useState<Template[]>([]);
-  const [publicTemplates, setPublicTemplates] = useState<Template[]>([]);
+  // Essential state only
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+  
+  // Data fetching and services
+  const [myTemplates, setMyTemplates] = useState<Template[]>([]);
+  const [publicTemplates, setPublicTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const templateService = useTemplateService();
+  
+  // Filtered data using custom hook
+  const filteredMyTemplates = useTemplateSearch(myTemplates, searchQuery);
+  const filteredPublicTemplates = useTemplateSearch(publicTemplates, searchQuery);
 
   useEffect(() => {
     fetchTemplates();
@@ -117,16 +124,6 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     setSelectedTemplate(null);
   };
 
-  const filteredMyTemplates = myTemplates.filter(template =>
-    template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  const filteredPublicTemplates = publicTemplates.filter(template =>
-    template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (template.description && template.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
   if (viewMode === 'editor') {
     return (
       <TemplateEditor
@@ -152,43 +149,11 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">MCP Prompt Manager</h1>
-              <p className="text-sm text-muted-foreground">Welcome, {user.email}</p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button onClick={handleCreateNew}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Template
-              </Button>
-              <Button variant="outline" onClick={onSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader user={user} onSignOut={onSignOut} onCreateNew={handleCreateNew} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search templates..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
+        <TemplateSearch value={searchQuery} onChange={setSearchQuery} />
 
         {/* Templates */}
         <Tabs defaultValue="my-templates" className="w-full">
@@ -202,65 +167,25 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
           </TabsList>
           
           <TabsContent value="my-templates" className="mt-6">
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : filteredMyTemplates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredMyTemplates.map((template) => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    isOwner={true}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onView={handleView}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery ? 'No templates match your search.' : 'You haven\'t created any templates yet.'}
-                </p>
-                <Button onClick={handleCreateNew}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Template
-                </Button>
-              </div>
-            )}
+            <TemplateGrid
+              templates={filteredMyTemplates}
+              currentUserId={user.id}
+              loading={loading}
+              emptyMessage={searchQuery ? 'No templates match your search.' : "You haven't created any templates yet."}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onView={handleView}
+            />
           </TabsContent>
           
           <TabsContent value="public-templates" className="mt-6">
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : filteredPublicTemplates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredPublicTemplates.map((template) => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    isOwner={template.userId === user.id}
-                    onEdit={template.userId === user.id ? handleEdit : undefined}
-                    onDelete={template.userId === user.id ? handleDelete : undefined}
-                    onView={handleView}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {searchQuery ? 'No public templates match your search.' : 'No public templates available yet.'}
-                </p>
-              </div>
-            )}
+            <TemplateGrid
+              templates={filteredPublicTemplates}
+              currentUserId={user.id}
+              loading={loading}
+              emptyMessage={searchQuery ? 'No public templates match your search.' : 'No public templates available yet.'}
+              onView={handleView}
+            />
           </TabsContent>
         </Tabs>
       </main>
