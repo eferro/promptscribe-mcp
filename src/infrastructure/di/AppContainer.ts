@@ -2,6 +2,7 @@ import { Container } from './Container';
 import { TemplateRepository } from '../../domain/repositories/TemplateRepository';
 import { SupabaseTemplateRepository } from '../repositories/SupabaseTemplateRepository';
 import { TemplateApplicationService } from '../../application/services/TemplateApplicationService';
+import { supabase } from '../../integrations/supabase/client';
 
 export const createAppContainer = (): Container => {
   const container = new Container();
@@ -9,7 +10,7 @@ export const createAppContainer = (): Container => {
   // Register Repository
   container.register<TemplateRepository>(
     'TemplateRepository',
-    () => new SupabaseTemplateRepository()
+    () => new SupabaseTemplateRepository(supabase)
   );
 
   // Register Application Service

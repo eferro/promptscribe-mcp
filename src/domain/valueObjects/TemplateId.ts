@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { ValidationError } from '../errors/DomainError';
 
 export class TemplateId {
@@ -13,7 +12,20 @@ export class TemplateId {
   }
 
   static generate(): TemplateId {
-    return new TemplateId(randomUUID());
+    return new TemplateId(this.generateUuid());
+  }
+
+  private static generateUuid(): string {
+    // Use Web Crypto API for browser compatibility
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    // Fallback for older browsers or environments
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   getValue(): string {
