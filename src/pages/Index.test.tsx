@@ -94,8 +94,8 @@ describe('Index', () => {
     vi.mocked(signOut).mockImplementation(mockSignOut);
 
     // Clear URL parameters
-    delete (window as any).location;
-    (window as any).location = {
+    delete (window as Window & { location?: unknown }).location;
+    (window as Window & { location: { search: string; pathname: string } }).location = {
       search: '',
       pathname: '/',
     };
@@ -109,7 +109,7 @@ describe('Index', () => {
 
   it('shows loading state initially', async () => {
     // Mock getSession to be slow
-    let resolve: any;
+    let resolve: (value: unknown) => void;
     mockGetSession.mockReturnValue(new Promise(r => resolve = r));
 
     render(
@@ -159,7 +159,7 @@ describe('Index', () => {
   });
 
   it('handles auth state changes', async () => {
-    let authCallback: any;
+    let authCallback: (event: unknown, session: unknown) => void;
     mockOnAuthStateChange.mockImplementation((callback) => {
       authCallback = callback;
       return { data: { subscription: { unsubscribe: vi.fn() } } };
@@ -183,8 +183,8 @@ describe('Index', () => {
 
   it('detects password recovery from URL parameters', async () => {
     // Mock URL with recovery parameters
-    delete (window as any).location;
-    (window as any).location = {
+    delete (window as Window & { location?: unknown }).location;
+    (window as Window & { location: { search: string; pathname: string } }).location = {
       search: '?access_token=token&refresh_token=refresh&type=recovery',
       pathname: '/',
     };
@@ -205,7 +205,7 @@ describe('Index', () => {
   });
 
   it('shows password change form on PASSWORD_RECOVERY event', async () => {
-    let authCallback: any;
+    let authCallback: (event: unknown, session: unknown) => void;
     mockOnAuthStateChange.mockImplementation((callback) => {
       authCallback = callback;
       return { data: { subscription: { unsubscribe: vi.fn() } } };
@@ -235,8 +235,8 @@ describe('Index', () => {
 
   it('handles password change completion', async () => {
     // Start with password change form visible
-    delete (window as any).location;
-    (window as any).location = {
+    delete (window as Window & { location?: unknown }).location;
+    (window as Window & { location: { search: string; pathname: string } }).location = {
       search: '?access_token=token&refresh_token=refresh&type=recovery',
       pathname: '/',
     };
@@ -265,8 +265,8 @@ describe('Index', () => {
 
   it('handles password change cancellation', async () => {
     // Start with password change form visible
-    delete (window as any).location;
-    (window as any).location = {
+    delete (window as Window & { location?: unknown }).location;
+    (window as Window & { location: { search: string; pathname: string } }).location = {
       search: '?access_token=token&refresh_token=refresh&type=recovery',
       pathname: '/',
     };
@@ -329,8 +329,8 @@ describe('Index', () => {
   });
 
   it('handles URL parameters correctly when no recovery tokens present', async () => {
-    delete (window as any).location;
-    (window as any).location = {
+    delete (window as Window & { location?: unknown }).location;
+    (window as Window & { location: { search: string; pathname: string } }).location = {
       search: '?some_other_param=value',
       pathname: '/',
     };
@@ -352,7 +352,7 @@ describe('Index', () => {
   });
 
   it('should use isMounted pattern to prevent state updates after unmount', async () => {
-    let getSessionResolve: any;
+    let getSessionResolve: (value: unknown) => void;
     
     mockGetSession.mockImplementation(() => {
       return new Promise((resolve) => {
@@ -379,7 +379,7 @@ describe('Index', () => {
   });
 
   it('handles async initialization properly with isMounted pattern', async () => {
-    let authCallback: any;
+    let authCallback: (event: unknown, session: unknown) => void;
     
     // Mock slow getSession response
     mockGetSession.mockReturnValue(

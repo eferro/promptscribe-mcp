@@ -30,15 +30,38 @@ vi.mock('@/api/supabaseApi', () => ({
   handleRequest: vi.fn(),
 }));
 
+interface MockAuthResult {
+  data: Record<string, unknown>;
+  error: null;
+}
+
+interface MockSessionResult {
+  data: { session: null };
+  error: null;
+}
+
+interface MockSubscriptionResult {
+  data: { subscription: Record<string, unknown> };
+}
+
+interface MockUserResult {
+  data: { user: null };
+  error: null;
+}
+
+interface MockSignOutResult {
+  error: null;
+}
+
 describe('authService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('signUp delegates to supabase', async () => {
-    const result = { data: {}, error: null } as any;
+    const result: MockAuthResult = { data: {}, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.signUp).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.signUp).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signUp('a@b.com', 'pass', 'redirect');
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
@@ -51,9 +74,9 @@ describe('authService', () => {
   });
 
   it('signIn delegates to supabase', async () => {
-    const result = { data: {}, error: null } as any;
+    const result: MockAuthResult = { data: {}, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.signInWithPassword).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.signInWithPassword).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signIn('a@b.com', 'pass');
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
@@ -65,9 +88,9 @@ describe('authService', () => {
   });
 
   it('resetPassword delegates to supabase', async () => {
-    const result = { data: {}, error: null } as any;
+    const result: MockAuthResult = { data: {}, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.resetPasswordForEmail).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await resetPassword('a@b.com', 'redir');
     expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('a@b.com', { redirectTo: 'redir' });
@@ -76,9 +99,9 @@ describe('authService', () => {
   });
 
   it('updatePassword delegates to supabase', async () => {
-    const result = { data: {}, error: null } as any;
+    const result: MockAuthResult = { data: {}, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.updateUser).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.updateUser).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await updatePassword('newpass');
     expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpass' });
@@ -87,9 +110,9 @@ describe('authService', () => {
   });
 
   it('getSession delegates to supabase', async () => {
-    const result = { data: { session: null }, error: null } as any;
+    const result: MockSessionResult = { data: { session: null }, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.getSession).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.getSession).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await getSession();
     expect(supabase.auth.getSession).toHaveBeenCalled();
@@ -99,7 +122,7 @@ describe('authService', () => {
 
   it('onAuthStateChange delegates to supabase', () => {
     const subscription = { unsubscribe: vi.fn() };
-    const result = { data: { subscription } } as any;
+    const result: MockSubscriptionResult = { data: { subscription } };
     const callback = vi.fn();
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue(result);
     const response = onAuthStateChange(callback);
@@ -108,9 +131,9 @@ describe('authService', () => {
   });
 
   it('signOut delegates to supabase', async () => {
-    const result = { error: null } as any;
+    const result: MockSignOutResult = { error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.signOut).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.signOut).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await signOut();
     expect(supabase.auth.signOut).toHaveBeenCalled();
@@ -119,9 +142,9 @@ describe('authService', () => {
   });
 
   it('getUser delegates to supabase', async () => {
-    const result = { data: { user: null }, error: null } as any;
+    const result: MockUserResult = { data: { user: null }, error: null };
     const promise = Promise.resolve(result);
-    vi.mocked(supabase.auth.getUser).mockReturnValue(promise as any);
+    vi.mocked(supabase.auth.getUser).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
     const response = await getUser();
     expect(supabase.auth.getUser).toHaveBeenCalled();
