@@ -92,4 +92,50 @@ describe('Template', () => {
       expect(template.canBeEditedBy(userId)).toBe(false);
     });
   });
+
+  describe('fromPersistence', () => {
+    it('should reconstruct template from persistence data', () => {
+      const persistenceData = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Persisted Template',
+        description: 'Persisted description',
+        userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        isPublic: true,
+        messages: [{ role: 'user' as const, content: 'Persisted message' }],
+        arguments_: [{ name: 'arg1', description: 'Argument 1', required: true }],
+        createdAt: new Date('2023-01-01T00:00:00Z'),
+        updatedAt: new Date('2023-01-02T00:00:00Z')
+      };
+
+      const template = Template.fromPersistence(persistenceData);
+
+      expect(template.getId().getValue()).toBe('123e4567-e89b-12d3-a456-426614174000');
+      expect(template.getName().getValue()).toBe('Persisted Template');
+      expect(template.getDescription()?.getValue()).toBe('Persisted description');
+      expect(template.getUserId().getValue()).toBe('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      expect(template.isPublic()).toBe(true);
+      expect(template.getMessages()).toHaveLength(1);
+      expect(template.getArguments()).toHaveLength(1);
+      expect(template.getCreatedAt()).toEqual(new Date('2023-01-01T00:00:00Z'));
+      expect(template.getUpdatedAt()).toEqual(new Date('2023-01-02T00:00:00Z'));
+    });
+
+    it('should handle null description in persistence data', () => {
+      const persistenceData = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Template Without Description',
+        description: null,
+        userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        isPublic: false,
+        messages: [{ role: 'user' as const, content: 'Message' }],
+        arguments_: [],
+        createdAt: new Date('2023-01-01T00:00:00Z'),
+        updatedAt: new Date('2023-01-01T00:00:00Z')
+      };
+
+      const template = Template.fromPersistence(persistenceData);
+
+      expect(template.getDescription()).toBeNull();
+    });
+  });
 });

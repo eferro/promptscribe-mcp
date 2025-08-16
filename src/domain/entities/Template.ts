@@ -24,6 +24,18 @@ export interface CreateTemplateParams {
   isPublic: boolean;
 }
 
+export interface TemplatePersistenceData {
+  id: string;
+  name: string;
+  description: string | null;
+  userId: string;
+  isPublic: boolean;
+  messages: TemplateMessage[];
+  arguments_: TemplateArgument[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export class Template {
   private constructor(
     private readonly id: TemplateId,
@@ -54,6 +66,20 @@ export class Template {
       [...params.arguments_], // Copy to prevent external mutation
       now,
       now
+    );
+  }
+
+  static fromPersistence(data: TemplatePersistenceData): Template {
+    return new Template(
+      TemplateId.create(data.id),
+      TemplateName.create(data.name),
+      data.description ? TemplateDescription.create(data.description) : null,
+      UserId.create(data.userId),
+      data.isPublic,
+      [...data.messages], // Copy to prevent external mutation
+      [...data.arguments_], // Copy to prevent external mutation
+      data.createdAt,
+      data.updatedAt
     );
   }
 
