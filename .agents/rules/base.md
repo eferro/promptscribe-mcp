@@ -142,4 +142,13 @@ Only commit when ALL of the following are true:
 - Minimal duplication across the codebase
 - Methods that are small and focused
 
+## 10. Language Policy
+
+- Communication with the user may be in Spanish or English.
+- All code artifacts must be in English:
+  - Identifiers (variables, functions, classes), comments, and in-code strings (unless explicitly specified otherwise by product requirements).
+  - Commit messages, branch names, PR titles/descriptions.
+  - Documentation, READMEs, ADRs, and any developer-facing text.
+- If user-provided examples arrive in Spanish, translate/adapt them to English when integrating into code or docs.
+
 This methodology ensures high-quality, well-tested code through disciplined development practices and clear separation of concerns.
