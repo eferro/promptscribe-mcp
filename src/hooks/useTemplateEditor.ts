@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { MCPTemplate, TemplateArgument, TemplateMessage, TemplateData } from '@/types/template';
+import { Template, TemplateArgument, TemplateMessage } from '@/types/template';
 import useArrayField from './useArrayField';
 
-export function useTemplateEditor(initial?: MCPTemplate) {
+export function useTemplateEditor(initial?: Template) {
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [isPublic, setIsPublic] = useState(initial?.is_public ?? false);
-
-  const initialData: TemplateData = (initial?.template_data ?? {}) as TemplateData;
+  const [isPublic, setIsPublic] = useState(initial?.isPublic ?? false);
 
   const {
     items: arguments_,
@@ -15,7 +13,7 @@ export function useTemplateEditor(initial?: MCPTemplate) {
     removeItem: removeArgument,
     updateItem: updateArgument,
   } = useArrayField<TemplateArgument>(
-    initialData.arguments ?? [],
+    initial?.arguments ?? [],
     () => ({ name: '', description: '', required: false })
   );
 
@@ -25,7 +23,7 @@ export function useTemplateEditor(initial?: MCPTemplate) {
     removeItem: removeMessage,
     updateItem: updateMessage,
   } = useArrayField<TemplateMessage>(
-    initialData.messages ?? [{ role: 'user', content: '{{prompt}}' }],
+    initial?.messages ?? [{ role: 'user', content: '{{prompt}}' }],
     () => ({ role: 'user', content: '' })
   );
 

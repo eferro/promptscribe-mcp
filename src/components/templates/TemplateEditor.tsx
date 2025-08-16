@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import useTemplateEditor from '@/hooks/useTemplateEditor';
 import { getUser } from "@/services/authService";
-import { saveTemplate } from "@/services/templateServiceAdapter";
+import { useTemplateService } from "@/hooks/useServices";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import { MCPTemplate, TemplateData } from '@/types/template';
+import { Template } from '@/types/template';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import TemplateArgumentsEditor from './TemplateArgumentsEditor';
 import TemplateDetailsForm from './TemplateDetailsForm';
 import TemplateMessagesEditor from './TemplateMessagesEditor';
 
 interface TemplateEditorProps {
-  template?: MCPTemplate;
+  template?: Template;
   onSave: () => void;
   onCancel: () => void;
-  onDelete?: (template: MCPTemplate) => void;
+  onDelete?: (template: Template) => void;
 }
 
 
@@ -40,6 +40,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const templateService = useTemplateService();
 
   const handleDelete = () => {
     setDeleteDialogOpen(true);
@@ -84,40 +85,37 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
         return;
       }
 
-      // Build the template data object
-      const templateData: TemplateData = {
-        arguments: arguments_,
-        messages: messages
-      };
-
-      const templatePayload = {
-        name: name.trim(),
-        description: description.trim() || null,
-        template_data: templateData,
-        is_public: isPublic,
-        user_id: user.id
-      };
-
-      const { error } = await saveTemplate(templatePayload, template?.id);
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: error.message
+      if (template?.id) {
+        // Update existing template
+        await templateService.update(template.id, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          messages: messages,
+          arguments: arguments_,
+          isPublic: isPublic
         });
       } else {
-        toast({
-          title: "Success",
-          description: template?.id ? "Template updated successfully" : "Template created successfully"
+        // Create new template
+        await templateService.create({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          messages: messages,
+          arguments: arguments_,
+          isPublic: isPublic,
+          userId: user.id
         });
-        onSave();
       }
-    } catch (error) {
+
+      toast({
+        title: "Success",
+        description: template?.id ? "Template updated successfully" : "Template created successfully"
+      });
+      onSave();
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred"
+        description: error.message || "An unexpected error occurred"
       });
     } finally {
       setLoading(false);

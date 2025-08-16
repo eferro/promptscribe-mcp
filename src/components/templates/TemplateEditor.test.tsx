@@ -4,7 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TemplateEditor from './TemplateEditor';
 import { useToast } from "@/hooks/use-toast";
 import { getUser } from "@/services/authService";
-import { saveTemplate } from "@/services/templateServiceAdapter";
+import { useTemplateService } from "@/hooks/useServices";
+
+const mockTemplateService = {
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  findById: vi.fn(),
+  findByUser: vi.fn(),
+  findPublic: vi.fn(),
+};
 
 // Mock dependencies
 vi.mock("@/hooks/use-toast");
@@ -12,8 +21,8 @@ vi.mock("@/services/authService", () => ({
   getUser: vi.fn(),
 }));
 
-vi.mock("@/services/templateServiceAdapter", () => ({
-  saveTemplate: vi.fn(),
+vi.mock("@/hooks/useServices", () => ({
+  useTemplateService: vi.fn(() => mockTemplateService),
 }));
 
 const mockToast = vi.fn();
@@ -24,16 +33,16 @@ const mockTemplate = {
   id: '123',
   name: 'Test Template',
   description: 'Test description',
-  template_data: {
-    arguments: [
-      { name: 'topic', description: 'The topic to discuss', required: true }
-    ],
-    messages: [
-      { role: 'user', content: 'Tell me about {{topic}}' }
-    ]
-  },
-  is_public: false,
-  user_id: 'user123'
+  arguments: [
+    { name: 'topic', description: 'The topic to discuss', required: true }
+  ],
+  messages: [
+    { role: 'user', content: 'Tell me about {{topic}}' }
+  ],
+  isPublic: false,
+  userId: 'user123',
+  createdAt: '2023-01-01T00:00:00Z',
+  updatedAt: '2023-01-01T00:00:00Z'
 };
 
 describe('TemplateEditor', () => {
@@ -43,7 +52,8 @@ describe('TemplateEditor', () => {
     (getUser as any).mockResolvedValue({
       data: { user: { id: 'user123' } }
     });
-    (saveTemplate as any).mockResolvedValue({ error: null });
+    mockTemplateService.create.mockResolvedValue(mockTemplate);
+    mockTemplateService.update.mockResolvedValue(mockTemplate);
   });
 
   it('renders template editor for new template', () => {
@@ -315,7 +325,7 @@ describe('TemplateEditor', () => {
     await user.click(screen.getByText('Save Template'));
     
     await waitFor(() => {
-      expect(saveTemplate).toHaveBeenCalled();
+      expect(mockTemplateService.create).toHaveBeenCalled();
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -338,7 +348,7 @@ describe('TemplateEditor', () => {
     await user.click(screen.getByText('Save Template'));
     
     await waitFor(() => {
-      expect(saveTemplate).toHaveBeenCalledWith(expect.any(Object), mockTemplate.id);
+      expect(mockTemplateService.update).toHaveBeenCalledWith(mockTemplate.id, expect.any(Object));
     });
     
     expect(mockToast).toHaveBeenCalledWith({
@@ -374,7 +384,7 @@ describe('TemplateEditor', () => {
   });
 
   it('handles save error from supabase', async () => {
-    (saveTemplate as any).mockResolvedValue({ error: { message: 'Database error' } });
+    mockTemplateService.create.mockRejectedValue(new Error('Database error'));
     
     const user = userEvent.setup();
     render(
@@ -390,7 +400,7 @@ describe('TemplateEditor', () => {
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         variant: "destructive",
-        title: "Save Failed",
+        title: "Error",
         description: "Database error"
       });
     });
@@ -413,8 +423,8 @@ describe('TemplateEditor', () => {
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith({
         variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred"
+        title: "Error", 
+        description: "Network error"
       });
     });
   });

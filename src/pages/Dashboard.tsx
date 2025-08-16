@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from "@/services/templateServiceAdapter";
+import { useTemplateService } from "@/hooks/useServices";
 import { Plus, Search, LogOut } from "lucide-react";
 import TemplateCard from "@/components/templates/TemplateCard";
 import TemplateEditor from "@/components/templates/TemplateEditor";
 import TemplateViewer from "@/components/templates/TemplateViewer";
 import DeleteConfirmDialog from "@/components/templates/DeleteConfirmDialog";
 import { User } from '@supabase/supabase-js';
-import { MCPTemplate } from '@/types/template';
+import { Template } from '@/types/template';
 
 interface DashboardProps {
   user: User;
@@ -20,15 +20,16 @@ interface DashboardProps {
 type ViewMode = 'dashboard' | 'editor' | 'viewer';
 
 export default function Dashboard({ user, onSignOut }: DashboardProps) {
-  const [myTemplates, setMyTemplates] = useState<MCPTemplate[]>([]);
-  const [publicTemplates, setPublicTemplates] = useState<MCPTemplate[]>([]);
+  const [myTemplates, setMyTemplates] = useState<Template[]>([]);
+  const [publicTemplates, setPublicTemplates] = useState<Template[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
-  const [selectedTemplate, setSelectedTemplate] = useState<MCPTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [templateToDelete, setTemplateToDelete] = useState<MCPTemplate | null>(null);
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
   const { toast } = useToast();
+  const templateService = useTemplateService();
 
   useEffect(() => {
     fetchTemplates();
@@ -38,14 +39,10 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     setLoading(true);
     try {
       // Fetch user's templates
-      const { data: userTemplates, error: userError } = await fetchUserTemplates(user.id);
-
-      if (userError) throw userError;
-
-      // Fetch public templates (including user's own)
-      const { data: publicData, error: publicError } = await fetchPublicTemplates();
-
-      if (publicError) throw publicError;
+      const userTemplates = await templateService.findByUser(user.id);
+      
+      // Fetch public templates
+      const publicData = await templateService.findPublic();
 
       setMyTemplates(userTemplates || []);
       setPublicTemplates(publicData || []);
@@ -53,7 +50,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load templates"
+        description: error.message || "Failed to load templates"
       });
     } finally {
       setLoading(false);
@@ -65,17 +62,17 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     setViewMode('editor');
   };
 
-  const handleEdit = (template: MCPTemplate) => {
+  const handleEdit = (template: Template) => {
     setSelectedTemplate(template);
     setViewMode('editor');
   };
 
-  const handleView = (template: MCPTemplate) => {
+  const handleView = (template: Template) => {
     setSelectedTemplate(template);
     setViewMode('viewer');
   };
 
-  const handleDelete = (template: MCPTemplate) => {
+  const handleDelete = (template: Template) => {
     setTemplateToDelete(template);
     setDeleteDialogOpen(true);
   };
@@ -84,9 +81,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     if (!templateToDelete) return;
 
     try {
-      const { error } = await deleteTemplate(templateToDelete.id);
-
-      if (error) throw error;
+      await templateService.delete(templateToDelete.id);
 
       toast({
         title: "Success",
@@ -104,7 +99,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete template"
+        description: error.message || "Failed to delete template"
       });
     } finally {
       setDeleteDialogOpen(false);
@@ -252,9 +247,9 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
                   <TemplateCard
                     key={template.id}
                     template={template}
-                    isOwner={template.user_id === user.id}
-                    onEdit={template.user_id === user.id ? handleEdit : undefined}
-                    onDelete={template.user_id === user.id ? handleDelete : undefined}
+                    isOwner={template.userId === user.id}
+                    onEdit={template.userId === user.id ? handleEdit : undefined}
+                    onDelete={template.userId === user.id ? handleDelete : undefined}
                     onView={handleView}
                   />
                 ))}

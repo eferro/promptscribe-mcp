@@ -1,12 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
-import { fetchUserTemplates, fetchPublicTemplates, deleteTemplate } from '@/services/templateServiceAdapter';
+import { useTemplateService } from '@/hooks/useServices';
 
-vi.mock('@/services/templateServiceAdapter', () => ({
-  fetchUserTemplates: vi.fn(),
-  fetchPublicTemplates: vi.fn(),
-  deleteTemplate: vi.fn(),
+const mockTemplateService = {
+  findByUser: vi.fn(),
+  findPublic: vi.fn(),
+  delete: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  findById: vi.fn(),
+};
+
+vi.mock('@/hooks/useServices', () => ({
+  useTemplateService: vi.fn(() => mockTemplateService),
 }));
 
 // Mock the toast hook
@@ -60,11 +67,12 @@ const mockTemplate = {
   id: 'template-1',
   name: 'Test Template',
   description: 'A test template',
-  template_data: { arguments: [], messages: [] },
-  is_public: true,
-  created_at: '2023-01-01',
-  updated_at: '2023-01-01',
-  user_id: 'user-123'
+  arguments: [],
+  messages: [],
+  isPublic: true,
+  createdAt: '2023-01-01',
+  updatedAt: '2023-01-01',
+  userId: 'user-123'
 };
 
 const mockOnSignOut = vi.fn();
@@ -72,9 +80,9 @@ const mockOnSignOut = vi.fn();
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fetchUserTemplates).mockResolvedValue({ data: [mockTemplate], error: null });
-    vi.mocked(fetchPublicTemplates).mockResolvedValue({ data: [mockTemplate], error: null });
-    vi.mocked(deleteTemplate).mockResolvedValue({ error: null });
+    mockTemplateService.findByUser.mockResolvedValue([mockTemplate]);
+    mockTemplateService.findPublic.mockResolvedValue([mockTemplate]);
+    mockTemplateService.delete.mockResolvedValue(undefined);
   });
 
   it('renders dashboard header with user email', async () => {
@@ -157,7 +165,7 @@ describe('Dashboard', () => {
       fireEvent.click(confirmButton);
     });
 
-    expect(deleteTemplate).toHaveBeenCalled();
+    expect(mockTemplateService.delete).toHaveBeenCalled();
   });
 
   it('cancels template deletion when user declines confirmation', async () => {
@@ -173,7 +181,7 @@ describe('Dashboard', () => {
       fireEvent.click(cancelButton);
     });
 
-    expect(deleteTemplate).not.toHaveBeenCalled();
+    expect(mockTemplateService.delete).not.toHaveBeenCalled();
   });
 
   it('handles sign out', () => {
@@ -223,7 +231,7 @@ describe('Dashboard', () => {
     });
   });
   it('handles delete template errors', async () => {
-    vi.mocked(deleteTemplate).mockResolvedValue({ error: new Error('Database connection failed') });
+    mockTemplateService.delete.mockRejectedValue(new Error('Database connection failed'));
 
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
 
@@ -241,13 +249,13 @@ describe('Dashboard', () => {
       expect(mockToast).toHaveBeenCalledWith({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete template",
+        description: "Database connection failed",
       });
     });
   });
 
   it('handles template fetch errors on initialization', async () => {
-    vi.mocked(fetchUserTemplates).mockResolvedValue({ data: null, error: new Error('Network timeout') });
+    mockTemplateService.findByUser.mockRejectedValue(new Error('Network timeout'));
 
     render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
 
@@ -255,7 +263,7 @@ describe('Dashboard', () => {
       expect(mockToast).toHaveBeenCalledWith({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load templates",
+        description: "Network timeout",
       });
     });
   });

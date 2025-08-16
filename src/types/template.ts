@@ -40,19 +40,39 @@ export interface MCPTemplate {
 }
 
 // Simple validation function
-export function validateTemplate(template: Partial<Template>): string[] {
+export function validateTemplate(template: Partial<Template>, isUpdate = false): string[] {
   const errors: string[] = [];
   
-  if (!template.name?.trim()) {
-    errors.push('Name is required');
-  }
-  
-  if (template.name && template.name.length > 100) {
-    errors.push('Name cannot exceed 100 characters');
-  }
-  
-  if (!template.messages || template.messages.length === 0) {
-    errors.push('At least one message is required');
+  if (isUpdate) {
+    // For updates, only validate fields that are being set
+    if (template.hasOwnProperty('name')) {
+      if (!template.name?.trim()) {
+        errors.push('Name is required');
+      }
+      
+      if (template.name && template.name.length > 100) {
+        errors.push('Name cannot exceed 100 characters');
+      }
+    }
+    
+    if (template.hasOwnProperty('messages')) {
+      if (!template.messages || template.messages.length === 0) {
+        errors.push('At least one message is required');
+      }
+    }
+  } else {
+    // For create operations, validate all required fields
+    if (!template.name?.trim()) {
+      errors.push('Name is required');
+    }
+    
+    if (template.name && template.name.length > 100) {
+      errors.push('Name cannot exceed 100 characters');
+    }
+    
+    if (!template.messages || template.messages.length === 0) {
+      errors.push('At least one message is required');
+    }
   }
   
   return errors;

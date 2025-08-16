@@ -1,50 +1,133 @@
-import { supabase } from '@/integrations/supabase/client';
-import { handleRequest } from '@/api/supabaseApi';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Template, validateTemplate } from '../types/template';
 
-export async function fetchUserTemplates(userId: string) {
-  return handleRequest(
-    supabase
+export class TemplateService {
+  constructor(private supabase: SupabaseClient) {}
+
+  async create(templateData: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>): Promise<Template> {
+    // Validate first
+    const errors = validateTemplate(templateData);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+
+    const payload = {
+      name: templateData.name,
+      description: templateData.description || null,
+      template_data: {
+        messages: templateData.messages,
+        arguments: templateData.arguments
+      },
+      user_id: templateData.userId,
+      is_public: templateData.isPublic,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await this.supabase
+      .from('prompt_templates')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to create template: ${error.message}`);
+    
+    return this.mapFromDb(data);
+  }
+
+  async findByUser(userId: string): Promise<Template[]> {
+    const { data, error } = await this.supabase
       .from('prompt_templates')
       .select('*')
       .eq('user_id', userId)
-      .order('updated_at', { ascending: false }),
-    'Failed to load templates'
-  );
-}
+      .order('updated_at', { ascending: false });
 
-export async function fetchPublicTemplates() {
-  return handleRequest(
-    supabase
+    if (error) throw new Error(`Failed to fetch templates: ${error.message}`);
+    
+    return data.map(row => this.mapFromDb(row));
+  }
+
+  async findPublic(): Promise<Template[]> {
+    const { data, error } = await this.supabase
       .from('prompt_templates')
       .select('*')
       .eq('is_public', true)
-      .order('updated_at', { ascending: false }),
-    'Failed to load templates'
-  );
-}
+      .order('updated_at', { ascending: false });
 
-export async function saveTemplate(payload: any, id?: string) {
-  if (id) {
-    return handleRequest(
-      supabase
-        .from('prompt_templates')
-        .update(payload)
-        .eq('id', id),
-      'Failed to save template'
-    );
+    if (error) throw new Error(`Failed to fetch public templates: ${error.message}`);
+    
+    return data.map(row => this.mapFromDb(row));
   }
-  return handleRequest(
-    supabase.from('prompt_templates').insert([payload]),
-    'Failed to save template'
-  );
-}
 
-export async function deleteTemplate(id: string) {
-  return handleRequest(
-    supabase
+  async findById(id: string): Promise<Template | null> {
+    const { data, error } = await this.supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw new Error(`Failed to fetch template: ${error.message}`);
+    }
+
+    return this.mapFromDb(data);
+  }
+
+  async update(id: string, updates: Partial<Template>): Promise<Template> {
+    // Validate updates
+    const errors = validateTemplate(updates, true);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+
+    const payload: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Only include fields that are being updated
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.description !== undefined) payload.description = updates.description || null;
+    if (updates.isPublic !== undefined) payload.is_public = updates.isPublic;
+    if (updates.messages !== undefined || updates.arguments !== undefined) {
+      payload.template_data = {
+        messages: updates.messages,
+        arguments: updates.arguments
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from('prompt_templates')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to update template: ${error.message}`);
+    
+    return this.mapFromDb(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.supabase
       .from('prompt_templates')
       .delete()
-      .eq('id', id),
-    'Failed to delete template'
-  );
+      .eq('id', id);
+
+    if (error) throw new Error(`Failed to delete template: ${error.message}`);
+  }
+
+  private mapFromDb(row: any): Template {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description || undefined,
+      messages: row.template_data?.messages || [],
+      arguments: row.template_data?.arguments || [],
+      isPublic: row.is_public,
+      userId: row.user_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
 }

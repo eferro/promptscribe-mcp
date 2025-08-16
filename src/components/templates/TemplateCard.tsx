@@ -3,21 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, Eye, Globe, Lock } from "lucide-react";
-import { MCPTemplate } from '@/types/template';
+import { Template } from '@/types/template';
 import { formatDate } from '@/lib/utils';
 
 interface TemplateCardProps {
-  template: MCPTemplate;
+  template: Template;
   isOwner: boolean;
-  onEdit?: (template: MCPTemplate) => void;
-  onDelete?: (template: MCPTemplate) => void;
-  onView: (template: MCPTemplate) => void;
+  onEdit?: (template: Template) => void;
+  onDelete?: (template: Template) => void;
+  onView: (template: Template) => void;
 }
 
 export default function TemplateCard({ template, isOwner, onEdit, onDelete, onView }: TemplateCardProps) {
 
-  const argumentCount = template.template_data?.arguments?.length || 0;
-  const messageCount = template.template_data?.messages?.length || 0;
+  const argumentCount = template.arguments?.length || 0;
+  const messageCount = template.messages?.length || 0;
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger if clicking on buttons or dropdown
@@ -39,8 +39,8 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
           </div>
           
           <div className="flex items-center gap-2">
-            <Badge variant={template.is_public ? "default" : "secondary"} className="text-xs">
-              {template.is_public ? (
+            <Badge variant={template.isPublic ? "default" : "secondary"} className="text-xs">
+              {template.isPublic ? (
                 <>
                   <Globe className="w-3 h-3 mr-1" />
                   Public
@@ -90,7 +90,7 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
             <span>{argumentCount} args</span>
             <span>{messageCount} messages</span>
           </div>
-          <span>{formatDate(template.updated_at)}</span>
+          <span>{formatDate(template.updatedAt)}</span>
         </div>
         
         <Button 

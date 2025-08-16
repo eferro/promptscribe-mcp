@@ -3,41 +3,65 @@ import { TemplateData, TemplateArgument, TemplateMessage, MCPTemplate, Template,
 
 describe('Template validation', () => {
   describe('validateTemplate', () => {
-    it('should validate required fields', () => {
-      expect(validateTemplate({})).toContain('Name is required');
-    });
-    
-    it('should validate name length', () => {
-      expect(validateTemplate({ name: 'a'.repeat(101) }))
-        .toContain('Name cannot exceed 100 characters');
+    describe('create validation (isUpdate=false)', () => {
+      it('should validate required fields', () => {
+        expect(validateTemplate({})).toContain('Name is required');
+      });
+      
+      it('should validate name length', () => {
+        expect(validateTemplate({ name: 'a'.repeat(101) }))
+          .toContain('Name cannot exceed 100 characters');
+      });
+
+      it('should require at least one message', () => {
+        expect(validateTemplate({ name: 'Valid Name', messages: [] }))
+          .toContain('At least one message is required');
+      });
+
+      it('should return empty array for valid template', () => {
+        const validTemplate: Partial<Template> = {
+          name: 'Valid Template',
+          messages: [{ role: 'user', content: 'Hello' }]
+        };
+        expect(validateTemplate(validTemplate)).toEqual([]);
+      });
+
+      it('should trim whitespace for name validation', () => {
+        expect(validateTemplate({ name: '   ' })).toContain('Name is required');
+      });
+
+      it('should return multiple errors for multiple issues', () => {
+        const invalidTemplate: Partial<Template> = {
+          name: '',
+          messages: []
+        };
+        const errors = validateTemplate(invalidTemplate);
+        expect(errors).toContain('Name is required');
+        expect(errors).toContain('At least one message is required');
+        expect(errors).toHaveLength(2);
+      });
     });
 
-    it('should require at least one message', () => {
-      expect(validateTemplate({ name: 'Valid Name', messages: [] }))
-        .toContain('At least one message is required');
-    });
+    describe('update validation (isUpdate=true)', () => {
+      it('should allow partial updates without required fields', () => {
+        const partialUpdate = { description: 'New description' };
+        expect(validateTemplate(partialUpdate, true)).toEqual([]);
+      });
 
-    it('should return empty array for valid template', () => {
-      const validTemplate: Partial<Template> = {
-        name: 'Valid Template',
-        messages: [{ role: 'user', content: 'Hello' }]
-      };
-      expect(validateTemplate(validTemplate)).toEqual([]);
-    });
+      it('should validate name if provided in update', () => {
+        const invalidUpdate = { name: '' };
+        expect(validateTemplate(invalidUpdate, true)).toContain('Name is required');
+      });
 
-    it('should trim whitespace for name validation', () => {
-      expect(validateTemplate({ name: '   ' })).toContain('Name is required');
-    });
+      it('should validate messages if provided in update', () => {
+        const invalidUpdate = { messages: [] };
+        expect(validateTemplate(invalidUpdate, true)).toContain('At least one message is required');
+      });
 
-    it('should return multiple errors for multiple issues', () => {
-      const invalidTemplate: Partial<Template> = {
-        name: '',
-        messages: []
-      };
-      const errors = validateTemplate(invalidTemplate);
-      expect(errors).toContain('Name is required');
-      expect(errors).toContain('At least one message is required');
-      expect(errors).toHaveLength(2);
+      it('should accept valid partial updates', () => {
+        const validUpdate = { name: 'Updated Name' };
+        expect(validateTemplate(validUpdate, true)).toEqual([]);
+      });
     });
   });
 });
