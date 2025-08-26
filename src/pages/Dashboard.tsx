@@ -13,7 +13,7 @@ import { TemplateSearch } from "@/components/Dashboard/TemplateSearch";
 import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
 import { Template } from '@/types/template';
-import { TaskTag, TAG_CATEGORIES } from '@/types/tags';
+import { TaskTag, ALL_TASK_TAGS } from '@/types/tags';
 
 interface DashboardProps {
   user: User;
@@ -206,7 +206,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
             className="px-3 py-2 border border-input rounded-md bg-background text-sm min-w-48"
           >
             <option value="">All Tags</option>
-            {Object.values(TAG_CATEGORIES).flat().map(tag => (
+            {ALL_TASK_TAGS.map(tag => (
               <option key={tag} value={tag}>
                 {tag.replace(/-/g, ' ')}
               </option>

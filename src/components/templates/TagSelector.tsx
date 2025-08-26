@@ -1,15 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  TESTING_TASK_TAGS, 
-  QUALITY_TASK_TAGS, 
-  REFACTORING_TASK_TAGS, 
-  AGILE_TASK_TAGS, 
-  LEAN_TASK_TAGS,
+  ALL_TASK_TAGS, 
   TaskTag,
-  TAG_CATEGORIES
+  formatTagDisplay,
+  searchTags
 } from '@/types/tags';
 
 interface TagSelectorProps {
@@ -23,67 +21,117 @@ export function TagSelector({
   onTagsChange, 
   maxTags = 5 
 }: TagSelectorProps) {
-  const [activeCategory, setActiveCategory] = useState<keyof typeof TAG_CATEGORIES>('testing');
-  
-  const handleTagToggle = (tag: TaskTag) => {
-    if (selectedTags.includes(tag)) {
-      onTagsChange(selectedTags.filter(t => t !== tag));
-    } else if (selectedTags.length < maxTags) {
+  const [inputValue, setInputValue] = useState('');
+  const [suggestions, setSuggestions] = useState<TaskTag[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Filter out already selected tags from suggestions
+  const availableTags = ALL_TASK_TAGS.filter(tag => !selectedTags.includes(tag));
+
+  useEffect(() => {
+    if (inputValue.trim()) {
+      const filtered = searchTags(inputValue).filter(tag => !selectedTags.includes(tag));
+      setSuggestions(filtered.slice(0, 8)); // Limit to 8 suggestions for better UX
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [inputValue, selectedTags]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  const handleTagSelect = (tag: TaskTag) => {
+    if (selectedTags.length < maxTags) {
       onTagsChange([...selectedTags, tag]);
+      setInputValue('');
+      setShowSuggestions(false);
+      inputRef.current?.focus();
     }
   };
 
-  const getCategoryDisplayName = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
+  const handleTagRemove = (tag: TaskTag) => {
+    onTagsChange(selectedTags.filter(t => t !== tag));
   };
 
-  const formatTagDisplay = (tag: string) => {
-    return tag.replace(/-/g, ' ');
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && suggestions.length > 0) {
+      e.preventDefault();
+      handleTagSelect(suggestions[0]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      inputRef.current?.blur();
+    }
   };
+
+  const isAtMaxTags = selectedTags.length >= maxTags;
 
   return (
-    <div className="space-y-4">
-      {/* Category Navigation */}
-      <div className="flex flex-wrap gap-2">
-        {Object.keys(TAG_CATEGORIES).map(category => (
-          <Button
-            key={category}
-            variant={activeCategory === category ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveCategory(category as keyof typeof TAG_CATEGORIES)}
+    <div className="space-y-3">
+      {/* Input with autocomplete */}
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isAtMaxTags ? "Maximum tags reached" : "Type to search tags..."}
+          disabled={isAtMaxTags}
+          className="pr-8"
+        />
+        
+        {/* Tag count indicator */}
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+          {selectedTags.length}/{maxTags}
+        </div>
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div 
+            ref={suggestionsRef}
+            className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto"
           >
-            {getCategoryDisplayName(category)}
-          </Button>
-        ))}
+            {suggestions.map(tag => (
+              <button
+                key={tag}
+                type="button"
+                className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground text-sm"
+                onClick={() => handleTagSelect(tag)}
+              >
+                {formatTagDisplay(tag)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Tags in Active Category */}
-      <div className="flex flex-wrap gap-2">
-        {TAG_CATEGORIES[activeCategory].map(tag => (
-          <Button
-            key={tag}
-            variant={selectedTags.includes(tag) ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleTagToggle(tag)}
-            disabled={!selectedTags.includes(tag) && selectedTags.length >= maxTags}
-            className="text-xs"
-          >
-            {formatTagDisplay(tag)}
-          </Button>
-        ))}
-      </div>
-
-      {/* Selected Tags Display */}
+      {/* Selected tags display */}
       {selectedTags.length > 0 && (
         <div className="space-y-2">
-          <Label>Selected Tags ({selectedTags.length}/{maxTags})</Label>
+          <Label className="text-sm font-medium">Selected Tags</Label>
           <div className="flex flex-wrap gap-2">
             {selectedTags.map(tag => (
               <Badge 
                 key={tag} 
                 variant="secondary" 
-                className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                onClick={() => handleTagToggle(tag)}
+                className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground text-xs"
+                onClick={() => handleTagRemove(tag)}
               >
                 {formatTagDisplay(tag)} ×
               </Badge>
@@ -91,6 +139,14 @@ export function TagSelector({
           </div>
         </div>
       )}
+
+      {/* Help text */}
+      <p className="text-xs text-muted-foreground">
+        {isAtMaxTags 
+          ? "Maximum tags reached. Remove some tags to add new ones."
+          : "Type to search and select tags. Press Enter to select the first suggestion."
+        }
+      </p>
     </div>
   );
 }

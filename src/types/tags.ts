@@ -1,5 +1,6 @@
-// Testing Task Tags
-export const TESTING_TASK_TAGS = [
+// All available task tags in a flat list
+export const ALL_TASK_TAGS = [
+  // Testing Task Tags
   'write-unit-test',
   'write-integration-test',
   'write-acceptance-test',
@@ -9,11 +10,9 @@ export const TESTING_TASK_TAGS = [
   'mock-dependencies',
   'test-edge-cases',
   'performance-testing',
-  'security-testing'
-] as const;
-
-// Code Quality Task Tags
-export const QUALITY_TASK_TAGS = [
+  'security-testing',
+  
+  // Code Quality Task Tags
   'remove-duplicate-code',
   'extract-method',
   'extract-class',
@@ -23,11 +22,9 @@ export const QUALITY_TASK_TAGS = [
   'remove-dead-code',
   'fix-code-smells',
   'improve-readability',
-  'add-documentation'
-] as const;
-
-// Refactoring Task Tags
-export const REFACTORING_TASK_TAGS = [
+  'add-documentation',
+  
+  // Refactoring Task Tags
   'extract-interface',
   'introduce-parameter-object',
   'replace-magic-numbers',
@@ -37,11 +34,9 @@ export const REFACTORING_TASK_TAGS = [
   'replace-conditional-with-polymorphism',
   'compose-method',
   'encapsulate-field',
-  'replace-inheritance-with-delegation'
-] as const;
-
-// Agile Development Task Tags
-export const AGILE_TASK_TAGS = [
+  'replace-inheritance-with-delegation',
+  
+  // Agile Development Task Tags
   'pair-programming',
   'code-review',
   'continuous-integration',
@@ -51,11 +46,9 @@ export const AGILE_TASK_TAGS = [
   'sustainable-pace',
   'technical-debt',
   'spike-solution',
-  'refactor-before-adding'
-] as const;
-
-// Lean Development Task Tags
-export const LEAN_TASK_TAGS = [
+  'refactor-before-adding',
+  
+  // Lean Development Task Tags
   'eliminate-waste',
   'amplify-learning',
   'decide-late',
@@ -69,26 +62,18 @@ export const LEAN_TASK_TAGS = [
 ] as const;
 
 // Combined type for all tags
-export type TaskTag = 
-  | typeof TESTING_TASK_TAGS[number]
-  | typeof QUALITY_TASK_TAGS[number]
-  | typeof REFACTORING_TASK_TAGS[number]
-  | typeof AGILE_TASK_TAGS[number]
-  | typeof LEAN_TASK_TAGS[number];
+export type TaskTag = typeof ALL_TASK_TAGS[number];
 
-// Tag categories for organization
-export interface TagCategories {
-  testing: typeof TESTING_TASK_TAGS;
-  quality: typeof QUALITY_TASK_TAGS;
-  refactoring: typeof REFACTORING_TASK_TAGS;
-  agile: typeof AGILE_TASK_TAGS;
-  lean: typeof LEAN_TASK_TAGS;
-}
+// Helper function to format tag display
+export const formatTagDisplay = (tag: string): string => {
+  return tag.replace(/-/g, ' ');
+};
 
-export const TAG_CATEGORIES: TagCategories = {
-  testing: TESTING_TASK_TAGS,
-  quality: QUALITY_TASK_TAGS,
-  refactoring: REFACTORING_TASK_TAGS,
-  agile: AGILE_TASK_TAGS,
-  lean: LEAN_TASK_TAGS
+// Helper function to search tags
+export const searchTags = (query: string): TaskTag[] => {
+  const normalizedQuery = query.toLowerCase().replace(/\s+/g, '-');
+  return ALL_TASK_TAGS.filter(tag => 
+    tag.toLowerCase().includes(normalizedQuery) ||
+    formatTagDisplay(tag).toLowerCase().includes(query.toLowerCase())
+  );
 };
