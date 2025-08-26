@@ -1,3 +1,5 @@
+import { TaskTag } from './tags';
+
 export interface TemplateMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -20,6 +22,7 @@ export interface Template {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  tags?: TaskTag[];
 }
 
 // Legacy interface for database mapping - will be removed in next phase
@@ -37,6 +40,7 @@ export interface MCPTemplate {
   created_at: string;
   updated_at: string;
   user_id: string;
+  tags: string[] | null;
 }
 
 // Simple validation function
@@ -60,6 +64,12 @@ export function validateTemplate(template: Partial<Template>, isUpdate = false):
         errors.push('At least one message is required');
       }
     }
+    
+    if ('tags' in template) {
+      if (template.tags && template.tags.length > 5) {
+        errors.push('Maximum 5 tags allowed per template');
+      }
+    }
   } else {
     // For create operations, validate all required fields
     if (!template.name?.trim()) {
@@ -72,6 +82,10 @@ export function validateTemplate(template: Partial<Template>, isUpdate = false):
     
     if (!template.messages || template.messages.length === 0) {
       errors.push('At least one message is required');
+    }
+    
+    if (template.tags && template.tags.length > 5) {
+      errors.push('Maximum 5 tags allowed per template');
     }
   }
   

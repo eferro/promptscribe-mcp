@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Template, TemplateArgument, TemplateMessage } from '@/types/template';
+import { TaskTag } from '@/types/tags';
 import useArrayField from './useArrayField';
 
 export function useTemplateEditor(initial?: Template) {
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [isPublic, setIsPublic] = useState(initial?.isPublic ?? false);
+  const [tags, setTags] = useState<TaskTag[]>(initial?.tags ?? []);
 
   const {
     items: arguments_,
@@ -34,6 +36,8 @@ export function useTemplateEditor(initial?: Template) {
     setDescription,
     isPublic,
     setIsPublic,
+    tags,
+    setTags,
     arguments_,
     addArgument,
     removeArgument,

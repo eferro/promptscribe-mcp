@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Template, validateTemplate } from '../types/template';
+import { TaskTag } from '../types/tags';
 
 // Database row type for template data
 interface TemplateDbRow {
@@ -14,6 +15,7 @@ interface TemplateDbRow {
   user_id: string;
   created_at: string;
   updated_at: string;
+  tags: string[] | null;
 }
 
 // Update payload type for database
@@ -22,6 +24,7 @@ interface TemplateUpdatePayload {
   name?: string;
   description?: string | null;
   is_public?: boolean;
+  tags?: string[] | null;
   template_data?: {
     messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
     arguments: Array<{ name: string; description: string; required: boolean; type?: string }>;
@@ -47,6 +50,7 @@ export class TemplateService {
       },
       user_id: templateData.userId,
       is_public: templateData.isPublic,
+      tags: templateData.tags || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -116,6 +120,7 @@ export class TemplateService {
     if (updates.name !== undefined) payload.name = updates.name;
     if (updates.description !== undefined) payload.description = updates.description || null;
     if (updates.isPublic !== undefined) payload.is_public = updates.isPublic;
+    if (updates.tags !== undefined) payload.tags = updates.tags || null;
     if (updates.messages !== undefined || updates.arguments !== undefined) {
       payload.template_data = {
         messages: updates.messages,
@@ -144,6 +149,17 @@ export class TemplateService {
     if (error) throw new Error(`Failed to delete template: ${error.message}`);
   }
 
+  // New method for tag-based search
+  async findByTags(tags: TaskTag[]): Promise<Template[]> {
+    const { data, error } = await this.supabase
+      .from('prompt_templates')
+      .select('*')
+      .overlaps('tags', tags);
+      
+    if (error) throw new Error(`Failed to search templates by tags: ${error.message}`);
+    return data.map(row => this.mapFromDb(row));
+  }
+
   private mapFromDb(row: TemplateDbRow): Template {
     return {
       id: row.id,
@@ -154,7 +170,8 @@ export class TemplateService {
       isPublic: row.is_public,
       userId: row.user_id,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      tags: row.tags ? row.tags as TaskTag[] : undefined
     };
   }
 }

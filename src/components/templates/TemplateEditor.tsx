@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import useTemplateEditor from '@/hooks/useTemplateEditor';
 import { getUser } from "@/services/authService";
 import { useTemplateService } from "@/hooks/useServices";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { Template } from '@/types/template';
+import { TagSelector } from './TagSelector';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import TemplateArgumentsEditor from './TemplateArgumentsEditor';
 import TemplateDetailsForm from './TemplateDetailsForm';
@@ -27,6 +29,8 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
     setDescription,
     isPublic,
     setIsPublic,
+    tags,
+    setTags,
     arguments_,
     addArgument,
     removeArgument,
@@ -92,7 +96,8 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
           description: description.trim() || undefined,
           messages: messages,
           arguments: arguments_,
-          isPublic: isPublic
+          isPublic: isPublic,
+          tags: tags.length > 0 ? tags : undefined
         });
       } else {
         // Create new template
@@ -102,6 +107,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
           messages: messages,
           arguments: arguments_,
           isPublic: isPublic,
+          tags: tags.length > 0 ? tags : undefined,
           userId: user.id
         });
       }
@@ -149,6 +155,20 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
           setDescription={setDescription}
           setIsPublic={setIsPublic}
         />
+
+        <div className="space-y-4">
+          <div>
+            <Label className="text-base font-semibold">Tags</Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Categorize your template with relevant development tasks (optional, max 5)
+            </p>
+            <TagSelector
+              selectedTags={tags}
+              onTagsChange={setTags}
+              maxTags={5}
+            />
+          </div>
+        </div>
 
         <TemplateArgumentsEditor
           arguments_={arguments_}

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTemplateService } from "@/hooks/useServices";
 // Lazy load heavy components to improve initial load
@@ -12,6 +13,7 @@ import { TemplateSearch } from "@/components/Dashboard/TemplateSearch";
 import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
 import { Template } from '@/types/template';
+import { TaskTag, TAG_CATEGORIES } from '@/types/tags';
 
 interface DashboardProps {
   user: User;
@@ -23,6 +25,7 @@ type ViewMode = 'dashboard' | 'editor' | 'viewer';
 export default function Dashboard({ user, onSignOut }: DashboardProps) {
   // Essential state only
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTagFilter, setSelectedTagFilter] = useState<TaskTag | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -58,9 +61,28 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     }
   }, [templateService, user.id, toast]);
 
-  // Filtered data using custom hook
-  const filteredMyTemplates = useTemplateSearch(myTemplates, searchQuery);
-  const filteredPublicTemplates = useTemplateSearch(publicTemplates, searchQuery);
+  // First apply text search using the hook
+  const textFilteredMyTemplates = useTemplateSearch(myTemplates, searchQuery);
+  const textFilteredPublicTemplates = useTemplateSearch(publicTemplates, searchQuery);
+
+  // Then apply tag filtering
+  const filteredMyTemplates = useMemo(() => {
+    if (selectedTagFilter) {
+      return textFilteredMyTemplates.filter(template => 
+        template.tags?.includes(selectedTagFilter)
+      );
+    }
+    return textFilteredMyTemplates;
+  }, [textFilteredMyTemplates, selectedTagFilter]);
+
+  const filteredPublicTemplates = useMemo(() => {
+    if (selectedTagFilter) {
+      return textFilteredPublicTemplates.filter(template => 
+        template.tags?.includes(selectedTagFilter)
+      );
+    }
+    return textFilteredPublicTemplates;
+  }, [textFilteredPublicTemplates, selectedTagFilter]);
 
   useEffect(() => {
     fetchTemplates();
@@ -174,6 +196,23 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         <TemplateSearch value={searchQuery} onChange={setSearchQuery} />
+
+        {/* Tag Filter */}
+        <div className="mb-6">
+          <Label className="text-sm font-medium mb-2 block">Filter by Tag</Label>
+          <select 
+            value={selectedTagFilter || ''} 
+            onChange={(e) => setSelectedTagFilter(e.target.value as TaskTag || null)}
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm min-w-48"
+          >
+            <option value="">All Tags</option>
+            {Object.values(TAG_CATEGORIES).flat().map(tag => (
+              <option key={tag} value={tag}>
+                {tag.replace(/-/g, ' ')}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Templates */}
         <Tabs defaultValue="my-templates" className="w-full">

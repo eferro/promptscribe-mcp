@@ -36,6 +36,21 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
             <CardDescription className="line-clamp-2">
               {template.description || "No description provided"}
             </CardDescription>
+            {template.tags && template.tags.length > 0 && (
+              <div className="mt-2">
+                <div className="flex flex-wrap gap-1">
+                  {template.tags.map(tag => (
+                    <Badge 
+                      key={tag} 
+                      variant="outline" 
+                      className="text-xs px-2 py-1"
+                    >
+                      {tag.replace(/-/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
