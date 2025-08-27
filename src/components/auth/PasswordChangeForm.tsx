@@ -57,7 +57,7 @@ export default function PasswordChangeForm({ onPasswordChanged, onCancel }: Pass
         });
         onPasswordChanged();
       }
-    } catch (error) {
+      } catch {
       toast({
         variant: "destructive",
         title: "Error",

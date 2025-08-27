@@ -29,6 +29,9 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
     });
   };
 
+  const hasArguments = (template.template_data?.arguments?.length ?? 0) > 0;
+  const hasMessages = (template.template_data?.messages?.length ?? 0) > 0;
+
   const handleDelete = () => {
     setDeleteDialogOpen(true);
   };
@@ -44,7 +47,7 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
   const isOwner = template.user_id === user.id;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 space-y-6" data-testid="template-viewer">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -114,19 +117,19 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
           </Card>
 
           {/* Arguments */}
-          {template.template_data?.arguments?.length > 0 && (
+          {hasArguments && (
             <Card>
               <CardHeader>
                 <CardTitle>Arguments</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {template.template_data.arguments!.map((arg: TemplateArgument, index: number) => (
-                    <div key={index} className="p-2 bg-muted rounded text-sm">
-                      <div className="font-semibold">{arg.name}</div>
-                      {arg.description && (
-                        <div className="text-muted-foreground">{arg.description}</div>
-                      )}
+                  {template.template_data?.arguments?.map((arg: TemplateArgument, index: number) => (
+                      <div key={index} className="p-2 bg-muted rounded text-sm">
+                        <div className="font-semibold">{arg.name}</div>
+                        {arg.description && (
+                          <div className="text-muted-foreground">{arg.description}</div>
+                        )}
                       {arg.type && (
                         <Badge variant="outline" className="text-xs mt-1">
                           {arg.type}
@@ -158,14 +161,14 @@ export default function TemplateViewer({ template, user, onBack, onEdit, onDelet
           </Card>
 
           {/* Messages Preview */}
-          {template.template_data?.messages?.length > 0 && (
+          {hasMessages && (
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Messages Preview</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {template.template_data.messages!.map((message: TemplateMessage, index: number) => (
+                  {template.template_data?.messages?.map((message: TemplateMessage, index: number) => (
                     <div key={index} className="p-3 bg-muted rounded">
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">

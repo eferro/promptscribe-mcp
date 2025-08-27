@@ -223,15 +223,15 @@ describe('TemplateCard', () => {
     const onView = vi.fn();
     const cardClickHandler = vi.fn();
     
-    const { container } = render(
-      <div onClick={cardClickHandler}>
-        <TemplateCard
-          template={mockTemplate}
-          isOwner={true}
-          onView={onView}
-        />
-      </div>
-    );
+      render(
+        <div onClick={cardClickHandler}>
+          <TemplateCard
+            template={mockTemplate}
+            isOwner={true}
+            onView={onView}
+          />
+        </div>
+      );
     
     fireEvent.click(screen.getByText('View Template'));
     

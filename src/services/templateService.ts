@@ -121,12 +121,12 @@ export class TemplateService {
     if (updates.description !== undefined) payload.description = updates.description || null;
     if (updates.isPublic !== undefined) payload.is_public = updates.isPublic;
     if (updates.tags !== undefined) payload.tags = updates.tags || null;
-    if (updates.messages !== undefined || updates.arguments !== undefined) {
-      payload.template_data = {
-        messages: updates.messages,
-        arguments: updates.arguments
-      };
-    }
+      if (updates.messages !== undefined || updates.arguments !== undefined) {
+        payload.template_data = {
+          messages: updates.messages ?? [],
+          arguments: updates.arguments ?? []
+        };
+      }
 
     const { data, error } = await this.supabase
       .from('prompt_templates')

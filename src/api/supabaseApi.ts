@@ -8,10 +8,10 @@ interface SupabaseError {
   hint?: string;
 }
 
-export async function handleRequest<T>(
-  request: Promise<{ data: T | null; error: SupabaseError | null }>,
+export async function handleRequest<T, E extends { message: string } = SupabaseError>(
+  request: Promise<{ data: T | null; error: E | null }>,
   errorMessage: string
-): Promise<{ data: T | null; error: SupabaseError | null }>
+): Promise<{ data: T | null; error: E | null }>
 {
   try {
     const { data, error } = await request;
@@ -23,11 +23,11 @@ export async function handleRequest<T>(
   } catch (error: unknown) {
     console.error(error);
     toast({ variant: 'destructive', title: 'Error', description: errorMessage });
-    return { 
-      data: null, 
-      error: error instanceof Error 
+    return {
+      data: null,
+      error: (error instanceof Error
         ? { message: error.message }
-        : { message: 'Unknown error occurred' }
+        : { message: 'Unknown error occurred' }) as E
     };
   }
 }

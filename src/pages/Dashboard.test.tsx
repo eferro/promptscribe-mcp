@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
-import { useTemplateService } from '@/hooks/useServices';
 
 const mockTemplateService = {
   findByUser: vi.fn(),
@@ -173,8 +172,10 @@ describe('Dashboard', () => {
       const viewButton = screen.getByText('View');
       fireEvent.click(viewButton);
     });
-    
-    expect(screen.getByTestId('template-viewer')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('template-viewer')).toBeInTheDocument();
+    });
   });
 
   it('handles template deletion with confirmation', async () => {

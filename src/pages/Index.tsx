@@ -8,7 +8,6 @@ import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
 
@@ -18,13 +17,15 @@ const Index = () => {
     const initializeAuth = async () => {
       try {
         // Get initial session first
-        const { data: { session }, error } = await getSession();
-        
+        const { data, error } = await getSession() as {
+          data: { session: Session | null } | null;
+          error: { message: string } | null;
+        };
+
         if (error) throw error;
-        
+
         if (isMounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setUser(data?.session?.user ?? null);
           setLoading(false);
         }
       } catch (error) {
@@ -52,11 +53,10 @@ const Index = () => {
     const { data: { subscription } } = onAuthStateChange(
       (event, session) => {
         if (isMounted) {
-          setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
         }
-        
+
         // If this is a password recovery event, show the password change form
         if (event === 'PASSWORD_RECOVERY' && isMounted) {
           setShowPasswordChange(true);

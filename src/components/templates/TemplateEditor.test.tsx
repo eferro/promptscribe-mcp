@@ -1,10 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TemplateEditor from './TemplateEditor';
 import { useToast } from "@/hooks/use-toast";
 import { getUser } from "@/services/authService";
-import { useTemplateService } from "@/hooks/useServices";
 
 const mockTemplateService = {
   create: vi.fn(),

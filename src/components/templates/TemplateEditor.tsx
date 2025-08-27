@@ -7,8 +7,10 @@ import { getUser } from "@/services/authService";
 import { useTemplateService } from "@/hooks/useServices";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { Template } from '@/types/template';
+import { User } from '@supabase/supabase-js';
 import { TagSelector } from './TagSelector';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
+import { MCPTemplate } from '@/types/template';
 import TemplateArgumentsEditor from './TemplateArgumentsEditor';
 import TemplateDetailsForm from './TemplateDetailsForm';
 import TemplateMessagesEditor from './TemplateMessagesEditor';
@@ -79,8 +81,12 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
     setLoading(true);
 
     try {
-      const { data: { user } } = await getUser();
-      if (!user) {
+      const { data, error } = await getUser() as {
+        data: { user: User | null } | null;
+        error: { message: string } | null;
+      };
+      const user = data?.user;
+      if (error || !user) {
         toast({
           variant: "destructive",
           title: "Authentication Error",
@@ -199,7 +205,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onDelete }:
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        template={template || null}
+        template={template as unknown as MCPTemplate || null}
         onConfirm={confirmDelete}
       />
     </div>
