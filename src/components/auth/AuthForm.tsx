@@ -40,7 +40,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
           description: "We've sent you a confirmation link to complete your registration."
         });
       }
-    } catch (error) {
+      } catch {
       toast({
         variant: "destructive",
         title: "Error",
@@ -67,7 +67,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
       } else {
         onAuthSuccess();
       }
-    } catch (error) {
+      } catch {
       toast({
         variant: "destructive",
         title: "Error",
@@ -99,7 +99,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         setShowResetForm(false);
         setResetEmail('');
       }
-    } catch (error) {
+      } catch {
       toast({
         variant: "destructive",
         title: "Error",

@@ -1,14 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  ALL_TASK_TAGS, 
-  TaskTag,
-  formatTagDisplay,
-  searchTags
-} from '@/types/tags';
+import { TaskTag, formatTagDisplay, searchTags } from '@/types/tags';
 
 interface TagSelectorProps {
   selectedTags: TaskTag[];
@@ -26,9 +20,6 @@ export function TagSelector({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-
-  // Filter out already selected tags from suggestions
-  const availableTags = ALL_TASK_TAGS.filter(tag => !selectedTags.includes(tag));
 
   useEffect(() => {
     if (inputValue.trim()) {

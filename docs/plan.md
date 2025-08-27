@@ -3,10 +3,10 @@
 1. [ ] Standardize environment variables
    - Rename keys in `.env.example` and code to use consistent `VITE_` prefix
    - Update documentation and references
-2. [ ] Strengthen TypeScript configuration
+2. [x] Strengthen TypeScript configuration
    - Enable `strict`, `noImplicitAny`, `noUnusedLocals`, `noUnusedParameters`
    - Fix resulting compilation errors using TDD
-3. [ ] Reactivate critical lint rules
+3. [x] Reactivate critical lint rules
    - Enable `@typescript-eslint/no-unused-vars`
    - Remove unused variables across the codebase
 4. [ ] Introduce secure session storage

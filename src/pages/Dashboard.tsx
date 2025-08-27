@@ -12,7 +12,7 @@ import { TemplateGrid } from "@/components/Dashboard/TemplateGrid";
 import { TemplateSearch } from "@/components/Dashboard/TemplateSearch";
 import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
-import { Template } from '@/types/template';
+import { Template, MCPTemplate } from '@/types/template';
 import { TaskTag, ALL_TASK_TAGS } from '@/types/tags';
 
 interface DashboardProps {
@@ -179,11 +179,11 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
         </div>
       }>
         <TemplateViewer
-          template={selectedTemplate}
+          template={selectedTemplate as unknown as MCPTemplate}
           user={user}
           onBack={handleCancel}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={handleEdit as unknown as (t: MCPTemplate) => void}
+          onDelete={handleDelete as unknown as (t: MCPTemplate) => void}
         />
       </Suspense>
     );
@@ -252,7 +252,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        template={templateToDelete}
+        template={templateToDelete as unknown as MCPTemplate | null}
         onConfirm={confirmDelete}
       />
     </div>

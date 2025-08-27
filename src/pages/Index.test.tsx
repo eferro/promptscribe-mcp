@@ -158,12 +158,12 @@ describe('Index', () => {
     });
   });
 
-  it('handles auth state changes', async () => {
-    let authCallback: (event: unknown, session: unknown) => void;
-    mockOnAuthStateChange.mockImplementation((callback) => {
-      authCallback = callback;
-      return { data: { subscription: { unsubscribe: vi.fn() } } };
-    });
+    it('handles auth state changes', async () => {
+      let authCallback: (event: unknown, session: unknown) => void = () => {};
+      mockOnAuthStateChange.mockImplementation((callback) => {
+        authCallback = callback;
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      });
     
     render(
       <IndexWrapper>
@@ -379,32 +379,29 @@ describe('Index', () => {
   });
 
   it('handles async initialization properly with isMounted pattern', async () => {
-    let authCallback: (event: unknown, session: unknown) => void;
-    
     // Mock slow getSession response
     mockGetSession.mockReturnValue(
-      new Promise(resolve => 
+      new Promise(resolve =>
         setTimeout(() => resolve({ data: { session: mockSession } }), 100)
       )
     );
-    
-    mockOnAuthStateChange.mockImplementation((callback) => {
-      authCallback = callback;
+
+    mockOnAuthStateChange.mockImplementation(() => {
       return { data: { subscription: { unsubscribe: vi.fn() } } };
     });
-    
+
     const { unmount } = render(
       <IndexWrapper>
         <Index />
       </IndexWrapper>
     );
-    
+
     // Unmount quickly before getSession resolves
     unmount();
-    
+
     // Wait for async operations to potentially complete
     await new Promise(resolve => setTimeout(resolve, 150));
-    
+
     // This test verifies that state updates don't happen on unmounted component
     // Current implementation will fail this (no cleanup protection)
     expect(true).toBe(true); // Placeholder - real test needs component state inspection

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TemplateService } from './templateService';
-import { Template } from '../types/template';
 
 // Mock Supabase client type for testing
 interface MockSupabaseClient {
