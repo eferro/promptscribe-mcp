@@ -1,6 +1,6 @@
 # Development Tasks Plan
 
-1. [ ] Standardize environment variables
+1. [x] Standardize environment variables
    - Rename keys in `.env.example` and code to use consistent `VITE_` prefix
    - Update documentation and references
 2. [ ] Strengthen TypeScript configuration

@@ -35,7 +35,7 @@ npm run preview
 ```
 
 ### Environment Variables
-Create a `.env.local` file based on `.env.example` and provide your Supabase credentials:
+Create a `.env.local` file based on `.env.example` and provide your Supabase URL and anonymous key:
 ```sh
 VITE_SUPABASE_URL=https://fdtotoxhicqhoulckkgj.supabase.co
 VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
