@@ -86,7 +86,6 @@ jobs:
         run: |
           supabase link \
             --project-ref "$SUPABASE_PROJECT_REF" \
-            --access-token "$SUPABASE_ACCESS_TOKEN" \
             --password "$SUPABASE_DB_PASSWORD"
 
       - name: Run Supabase migrations
