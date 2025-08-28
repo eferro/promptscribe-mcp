@@ -23,7 +23,7 @@ export default function UsernameChangeForm({
   const { toast } = useToast();
 
   // Check username availability with debouncing
-  const checkUsernameAvailability = async (usernameToCheck: string) => {
+  const checkUsernameAvailability = React.useCallback(async (usernameToCheck: string) => {
     if (usernameToCheck.length < 3) {
       setUsernameAvailable(null);
       return;
@@ -44,7 +44,7 @@ export default function UsernameChangeForm({
     } finally {
       setCheckingUsername(false);
     }
-  };
+  }, [currentUsername]);
 
   // Debounced username check
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function UsernameChangeForm({
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [newUsername, currentUsername]);
+  }, [newUsername, currentUsername, checkUsernameAvailability]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

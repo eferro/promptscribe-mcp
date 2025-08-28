@@ -42,7 +42,7 @@ export default function UserProfileForm({
   }, [formData, profile]);
 
   // Check username availability with debouncing
-  const checkUsernameAvailability = async (usernameToCheck: string) => {
+  const checkUsernameAvailability = React.useCallback(async (usernameToCheck: string) => {
     if (usernameToCheck.length < 3) {
       setUsernameAvailable(null);
       return;
@@ -63,7 +63,7 @@ export default function UserProfileForm({
     } finally {
       setCheckingUsername(false);
     }
-  };
+  }, [profile.username]);
 
   // Debounced username check
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function UserProfileForm({
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [formData.username, profile.username]);
+  }, [formData.username, profile.username, checkUsernameAvailability]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({
