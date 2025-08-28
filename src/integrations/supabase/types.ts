@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          username: string
+          display_name: string | null
+          bio: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          username: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          username?: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      username_history: {
+        Row: {
+          id: string
+          user_id: string
+          old_username: string
+          new_username: string
+          changed_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          old_username: string
+          new_username: string
+          changed_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          old_username?: string
+          new_username?: string
+          changed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "username_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       prompt_templates: {
         Row: {
           created_at: string
@@ -25,6 +98,7 @@ export type Database = {
           template_data: Json
           updated_at: string
           user_id: string
+          created_by_username: string | null
         }
         Insert: {
           created_at?: string
@@ -36,6 +110,7 @@ export type Database = {
           template_data: Json
           updated_at?: string
           user_id: string
+          created_by_username?: string | null
         }
         Update: {
           created_at?: string
@@ -47,6 +122,7 @@ export type Database = {
           template_data?: Json
           updated_at?: string
           user_id?: string
+          created_by_username?: string | null
         }
         Relationships: []
       }

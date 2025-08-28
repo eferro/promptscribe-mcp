@@ -20,6 +20,7 @@ export interface Template {
   arguments: TemplateArgument[];
   isPublic: boolean;
   userId: string;
+  createdByUsername?: string;
   createdAt: string;
   updatedAt: string;
   tags?: TaskTag[];

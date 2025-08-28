@@ -104,6 +104,9 @@ export default function TemplateCard({ template, isOwner, onEdit, onDelete, onVi
           <div className="flex gap-4">
             <span>{argumentCount} args</span>
             <span>{messageCount} messages</span>
+            {template.createdByUsername && (
+              <span>by @{template.createdByUsername}</span>
+            )}
           </div>
           <span>{formatDate(template.updatedAt)}</span>
         </div>

@@ -107,7 +107,8 @@ describe('Dashboard', () => {
     });
     
     expect(screen.getByText('MCP Prompt Manager')).toBeInTheDocument();
-    expect(screen.getByText(`Welcome, ${mockUser.email}`)).toBeInTheDocument();
+    expect(screen.getByText(/Welcome,/)).toBeInTheDocument();
+    expect(screen.getByText('test')).toBeInTheDocument();
     expect(screen.getByText('New Template')).toBeInTheDocument();
     expect(screen.getByText('Sign Out')).toBeInTheDocument();
   });

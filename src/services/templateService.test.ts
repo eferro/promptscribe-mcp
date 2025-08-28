@@ -51,6 +51,7 @@ describe('TemplateService', () => {
           arguments: []
         },
         user_id: 'user-123',
+        created_by_username: 'testuser',
         is_public: false,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z'

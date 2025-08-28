@@ -13,7 +13,8 @@ describe('DashboardHeader', () => {
 
   it('should display user email', () => {
     render(<DashboardHeader user={mockUser} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
-    expect(screen.getByText('Welcome, test@example.com')).toBeInTheDocument();
+    expect(screen.getByText(/Welcome,/)).toBeInTheDocument();
+    expect(screen.getByText('test')).toBeInTheDocument();
   });
 
   it('should call onCreateNew when new template clicked', () => {
@@ -44,6 +45,88 @@ describe('DashboardHeader', () => {
   it('should display user email with proper text', () => {
     const userWithDifferentEmail = { email: 'different@test.com' };
     render(<DashboardHeader user={userWithDifferentEmail} onSignOut={mockOnSignOut} onCreateNew={mockOnCreateNew} />);
-    expect(screen.getByText('Welcome, different@test.com')).toBeInTheDocument();
+    expect(screen.getByText(/Welcome,/)).toBeInTheDocument();
+    expect(screen.getByText('different')).toBeInTheDocument();
+  });
+
+  it('should display username when userProfile is provided', () => {
+    const mockUserProfile = {
+      id: 'profile-1',
+      user_id: 'user-1',
+      username: 'testuser',
+      display_name: 'Test User',
+      bio: null,
+      avatar_url: null,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    };
+    
+    render(
+      <DashboardHeader 
+        user={mockUser} 
+        userProfile={mockUserProfile}
+        onSignOut={mockOnSignOut} 
+        onCreateNew={mockOnCreateNew} 
+      />
+    );
+    
+    expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.getByText('@testuser')).toBeInTheDocument();
+  });
+
+  it('should display username when only username is available', () => {
+    const mockUserProfile = {
+      id: 'profile-1',
+      user_id: 'user-1',
+      username: 'testuser',
+      display_name: null,
+      bio: null,
+      avatar_url: null,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    };
+    
+    render(
+      <DashboardHeader 
+        user={mockUser} 
+        userProfile={mockUserProfile}
+        onSignOut={mockOnSignOut} 
+        onCreateNew={mockOnCreateNew} 
+      />
+    );
+    
+    expect(screen.getByText('testuser')).toBeInTheDocument();
+    expect(screen.getByText('@testuser')).toBeInTheDocument();
+  });
+
+  it('should show profile button when onEditProfile is provided', () => {
+    const mockOnEditProfile = vi.fn();
+    
+    render(
+      <DashboardHeader 
+        user={mockUser} 
+        onSignOut={mockOnSignOut} 
+        onCreateNew={mockOnCreateNew}
+        onEditProfile={mockOnEditProfile}
+      />
+    );
+    
+    const profileButton = screen.getByRole('button', { name: /profile/i });
+    expect(profileButton).toBeInTheDocument();
+    
+    fireEvent.click(profileButton);
+    expect(mockOnEditProfile).toHaveBeenCalled();
+  });
+
+  it('should not show profile button when onEditProfile is not provided', () => {
+    render(
+      <DashboardHeader 
+        user={mockUser} 
+        onSignOut={mockOnSignOut} 
+        onCreateNew={mockOnCreateNew}
+      />
+    );
+    
+    expect(screen.queryByRole('button', { name: /profile/i })).not.toBeInTheDocument();
   });
 });

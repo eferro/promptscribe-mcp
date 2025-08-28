@@ -238,4 +238,40 @@ describe('TemplateCard', () => {
     expect(onView).toHaveBeenCalledWith(mockTemplate);
     expect(cardClickHandler).not.toHaveBeenCalled();
   });
+
+  it('displays creator username when available', () => {
+    const onView = vi.fn();
+    const templateWithUsername = {
+      ...mockTemplate,
+      createdByUsername: 'testuser'
+    };
+    
+    render(
+      <TemplateCard
+        template={templateWithUsername}
+        isOwner={false}
+        onView={onView}
+      />
+    );
+    
+    expect(screen.getByText('by @testuser')).toBeInTheDocument();
+  });
+
+  it('does not display creator username when not available', () => {
+    const onView = vi.fn();
+    const templateWithoutUsername = {
+      ...mockTemplate,
+      createdByUsername: undefined
+    };
+    
+    render(
+      <TemplateCard
+        template={templateWithoutUsername}
+        isOwner={false}
+        onView={onView}
+      />
+    );
+    
+    expect(screen.queryByText(/by @/)).not.toBeInTheDocument();
+  });
 });

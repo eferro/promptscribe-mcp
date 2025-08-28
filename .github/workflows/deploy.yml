@@ -52,13 +52,62 @@ jobs:
         with:
           path: ./dist
 
+  # Database migrations job (Supabase)
+  migrate:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for Supabase migration changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            migrations:
+              - 'supabase/migrations/**'
+            supabase_config:
+              - 'supabase/config.toml'
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --access-token "$SUPABASE_ACCESS_TOKEN" \
+            --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Run Supabase migrations
+        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true'
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          # Apply all pending migrations from supabase/migrations
+          supabase db push --include-all
+
+      - name: Skip migrations (no changes detected)
+        if: steps.changes.outputs.migrations != 'true' && steps.changes.outputs.supabase_config != 'true'
+        run: echo "No Supabase migration changes detected. Skipping migration step."
+
   # Deployment job
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, migrate]
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Deploy to GitHub Pages

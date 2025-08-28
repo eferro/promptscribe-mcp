@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 import { handleRequest } from '@/api/supabaseApi';
+import { UserProfileService } from './userProfileService';
 import {
   signUp,
   signIn,
@@ -10,6 +11,7 @@ import {
   onAuthStateChange,
   signOut,
   getUser,
+  createUserProfileAfterConfirmation,
 } from './authService';
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -28,6 +30,14 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 vi.mock('@/api/supabaseApi', () => ({
   handleRequest: vi.fn(),
+}));
+
+vi.mock('./userProfileService', () => ({
+  UserProfileService: {
+    isUsernameAvailable: vi.fn(),
+    createProfile: vi.fn(),
+    generateUniqueUsername: vi.fn(),
+  },
 }));
 
 interface MockAuthResult {
@@ -58,12 +68,16 @@ describe('authService', () => {
     vi.clearAllMocks();
   });
 
-  it('signUp delegates to supabase', async () => {
+  it('signUp delegates to supabase with username', async () => {
     const result: MockAuthResult = { data: {}, error: null };
     const promise = Promise.resolve(result);
     vi.mocked(supabase.auth.signUp).mockReturnValue(promise);
     vi.mocked(handleRequest).mockResolvedValue(result);
-    const response = await signUp('a@b.com', 'pass', 'redirect');
+    vi.mocked(UserProfileService.isUsernameAvailable).mockResolvedValue({ data: true, error: null });
+    
+    const response = await signUp('a@b.com', 'pass', 'testuser', 'redirect');
+    
+    expect(UserProfileService.isUsernameAvailable).toHaveBeenCalledWith('testuser');
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: 'a@b.com',
       password: 'pass',
@@ -150,6 +164,142 @@ describe('authService', () => {
     expect(supabase.auth.getUser).toHaveBeenCalled();
     expect(handleRequest).toHaveBeenCalledWith(promise, 'Failed to get user');
     expect(response).toBe(result);
+  });
+
+  describe('username functionality', () => {
+    beforeEach(() => {
+      // Clear localStorage before each test
+      localStorage.clear();
+      vi.clearAllMocks();
+    });
+
+    it('should reject signup when username is already taken', async () => {
+      vi.mocked(UserProfileService.isUsernameAvailable).mockResolvedValue({ 
+        data: false, 
+        error: null 
+      });
+
+      const response = await signUp('a@b.com', 'pass', 'takenuser', 'redirect');
+
+      expect(UserProfileService.isUsernameAvailable).toHaveBeenCalledWith('takenuser');
+      expect(response).toEqual({
+        data: null,
+        error: { message: 'Username is already taken. Please choose a different one.' }
+      });
+      expect(supabase.auth.signUp).not.toHaveBeenCalled();
+    });
+
+    it('should store pending username in localStorage on successful signup', async () => {
+      const result: MockAuthResult = { data: {}, error: null };
+      const promise = Promise.resolve(result);
+      vi.mocked(supabase.auth.signUp).mockReturnValue(promise);
+      vi.mocked(handleRequest).mockResolvedValue(result);
+      vi.mocked(UserProfileService.isUsernameAvailable).mockResolvedValue({ data: true, error: null });
+
+      await signUp('a@b.com', 'pass', 'testuser', 'redirect');
+
+      expect(localStorage.getItem('pendingUsername')).toBe('testuser');
+    });
+
+    it('should handle username availability check errors', async () => {
+      vi.mocked(UserProfileService.isUsernameAvailable).mockResolvedValue({ 
+        data: false, 
+        error: { message: 'Database error' } 
+      });
+
+      const response = await signUp('a@b.com', 'pass', 'testuser', 'redirect');
+
+      expect(response).toEqual({
+        data: null,
+        error: { message: 'Database error' }
+      });
+    });
+  });
+
+  describe('createUserProfileAfterConfirmation', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      vi.clearAllMocks();
+    });
+
+    it('should create profile with pending username from localStorage', async () => {
+      localStorage.setItem('pendingUsername', 'testuser');
+      vi.mocked(UserProfileService.createProfile).mockResolvedValue({ 
+        data: { id: 'profile-123', username: 'testuser' }, 
+        error: null 
+      });
+
+      const response = await createUserProfileAfterConfirmation('user-123', 'test@example.com');
+
+      expect(UserProfileService.createProfile).toHaveBeenCalledWith({
+        user_id: 'user-123',
+        username: 'testuser',
+        display_name: 'testuser',
+      });
+      expect(localStorage.getItem('pendingUsername')).toBeNull();
+      expect(response).toEqual({ data: 'Profile created successfully', error: null });
+    });
+
+    it('should generate username from email when no pending username exists', async () => {
+      vi.mocked(UserProfileService.generateUniqueUsername).mockResolvedValue({ 
+        data: 'generated_user', 
+        error: null 
+      });
+      vi.mocked(UserProfileService.createProfile).mockResolvedValue({ 
+        data: { id: 'profile-123', username: 'generated_user' }, 
+        error: null 
+      });
+
+      const response = await createUserProfileAfterConfirmation('user-123', 'test@example.com');
+
+      expect(UserProfileService.generateUniqueUsername).toHaveBeenCalledWith('test@example.com');
+      expect(UserProfileService.createProfile).toHaveBeenCalledWith({
+        user_id: 'user-123',
+        username: 'generated_user',
+        display_name: 'generated_user',
+      });
+      expect(response).toEqual({ data: 'Profile created successfully', error: null });
+    });
+
+    it('should handle profile creation errors', async () => {
+      localStorage.setItem('pendingUsername', 'testuser');
+      vi.mocked(UserProfileService.createProfile).mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Profile creation failed' } 
+      });
+
+      const response = await createUserProfileAfterConfirmation('user-123', 'test@example.com');
+
+      expect(response).toEqual({
+        data: null,
+        error: { message: 'Profile creation failed' }
+      });
+    });
+
+    it('should handle username generation errors', async () => {
+      vi.mocked(UserProfileService.generateUniqueUsername).mockResolvedValue({ 
+        data: '', 
+        error: { message: 'Username generation failed' } 
+      });
+
+      const response = await createUserProfileAfterConfirmation('user-123', 'test@example.com');
+
+      expect(response).toEqual({
+        data: null,
+        error: { message: 'Failed to generate username' }
+      });
+    });
+
+    it('should handle general errors gracefully', async () => {
+      vi.mocked(UserProfileService.generateUniqueUsername).mockRejectedValue(new Error('Unexpected error'));
+
+      const response = await createUserProfileAfterConfirmation('user-123', 'test@example.com');
+
+      expect(response).toEqual({
+        data: null,
+        error: { message: 'Failed to create user profile' }
+      });
+    });
   });
 });
 

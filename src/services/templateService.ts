@@ -13,6 +13,7 @@ interface TemplateDbRow {
   } | null;
   is_public: boolean;
   user_id: string;
+  created_by_username: string | null;
   created_at: string;
   updated_at: string;
   tags: string[] | null;
@@ -53,6 +54,7 @@ export class TemplateService {
       tags: templateData.tags || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
+      // Note: created_by_username will be automatically populated by database trigger
     };
 
     const { data, error } = await this.supabase

@@ -10,6 +10,12 @@ vi.mock('@/services/authService', () => ({
   resetPassword: vi.fn(),
 }));
 
+vi.mock('@/services/userProfileService', () => ({
+  UserProfileService: {
+    isUsernameAvailable: vi.fn(),
+  },
+}));
+
 // Mock the toast hook
 const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
@@ -166,10 +172,16 @@ describe('AuthForm', () => {
     // Fill in form and submit
     await waitFor(async () => {
       const emailInput = screen.getByPlaceholderText('Enter your email');
+      const usernameInput = screen.getByPlaceholderText('Choose a username');
       const passwordInput = screen.getByPlaceholderText('Create a password');
       
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      
+      // Wait a bit for username validation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       fireEvent.click(screen.getByText('Create Account'));
     });
 
