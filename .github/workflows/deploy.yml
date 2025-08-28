@@ -5,6 +5,12 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_migrations:
+        description: "Force running Supabase migrations"
+        required: false
+        default: "false"
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -56,7 +62,7 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,7 +84,7 @@ jobs:
           version: latest
 
       - name: Link Supabase project
-        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true'
+        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true' || inputs.force_migrations == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -89,15 +95,16 @@ jobs:
             --password "$SUPABASE_DB_PASSWORD"
 
       - name: Run Supabase migrations
-        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true'
+        if: steps.changes.outputs.migrations == 'true' || steps.changes.outputs.supabase_config == 'true' || inputs.force_migrations == 'true'
         env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           # Apply all pending migrations from supabase/migrations
           supabase db push --include-all
 
       - name: Skip migrations (no changes detected)
-        if: steps.changes.outputs.migrations != 'true' && steps.changes.outputs.supabase_config != 'true'
+        if: steps.changes.outputs.migrations != 'true' && steps.changes.outputs.supabase_config != 'true' && inputs.force_migrations != 'true'
         run: echo "No Supabase migration changes detected. Skipping migration step."
 
   # Deployment job
