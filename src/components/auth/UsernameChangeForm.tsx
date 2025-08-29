@@ -4,17 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-
 interface UsernameChangeFormProps {
-  currentUsername: string;
+  user: { id: string; username: string };
   onUsernameChanged: (newUsername: string) => void;
   onCancel: () => void;
 }
 
-export default function UsernameChangeForm({ 
-  currentUsername, 
-  onUsernameChanged, 
-  onCancel 
+export default function UsernameChangeForm({
+  user,
+  onUsernameChanged,
+  onCancel
 }: UsernameChangeFormProps) {
   const [newUsername, setNewUsername] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,22 +28,17 @@ export default function UsernameChangeForm({
       return;
     }
 
-    if (usernameToCheck === currentUsername) {
-      setUsernameAvailable(true);
-      return;
-    }
-
     setCheckingUsername(true);
     try {
       const { UserProfileService } = await import('@/services/userProfileService');
-      const { data: isAvailable } = await UserProfileService.isUsernameAvailable(usernameToCheck);
+      const { data: isAvailable } = await UserProfileService.isUsernameAvailable(usernameToCheck, user.id);
       setUsernameAvailable(isAvailable);
     } catch {
       setUsernameAvailable(null);
     } finally {
       setCheckingUsername(false);
     }
-  }, [currentUsername]);
+  }, [user.id]);
 
   // Debounced username check
   useEffect(() => {
@@ -57,7 +51,7 @@ export default function UsernameChangeForm({
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [newUsername, currentUsername, checkUsernameAvailability]);
+  }, [newUsername, user.username, checkUsernameAvailability]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +65,7 @@ export default function UsernameChangeForm({
       return;
     }
 
-    if (newUsername.trim() === currentUsername) {
+    if (newUsername.trim() === user.username) {
       toast({
         title: "No changes",
         description: "New username is the same as current username"
@@ -101,7 +95,7 @@ export default function UsernameChangeForm({
 
     try {
       const { UserProfileService } = await import('@/services/userProfileService');
-      const { error } = await UserProfileService.updateUsername(currentUsername, newUsername.trim());
+      const { error } = await UserProfileService.updateUsername(user.id, newUsername.trim());
 
       if (error) {
         toast({
@@ -146,7 +140,7 @@ export default function UsernameChangeForm({
             <Input
               id="current-username"
               type="text"
-              value={currentUsername}
+              value={user.username}
               disabled
               className="bg-muted"
             />
