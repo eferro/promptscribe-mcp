@@ -12,7 +12,7 @@
 4. [x] Introduce secure session storage
    - Migrate Supabase token storage from `localStorage` to HTTP-only cookies or similar
    - Update Supabase client and adjust affected tests
-5. [ ] Refactor `AuthForm` component
+5. [x] Refactor `AuthForm` component
    - Split into `SignInForm`, `SignUpForm`, and `PasswordResetForm`
    - Extract repeated toast and state management logic
 6. [x] Centralize timestamp generation in `TemplateService`
