@@ -320,4 +320,48 @@ describe('TemplateService', () => {
         .rejects.toThrow('Failed to delete template: Delete failed');
     });
   });
+
+  describe('findByTags', () => {
+    it('should return templates matching tags', async () => {
+      const mockData = [{
+        id: '1',
+        name: 'Tagged Template',
+        description: 'Desc',
+        template_data: {
+          messages: [{ role: 'user', content: 'Hello' }],
+          arguments: []
+        },
+        user_id: 'user-1',
+        is_public: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+        tags: ['write-unit-test']
+      }];
+
+      mockSupabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          overlaps: vi.fn().mockResolvedValue({ data: mockData, error: null })
+        })
+      });
+
+      const result = await service.findByTags(['write-unit-test']);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tags).toEqual(['write-unit-test']);
+    });
+
+    it('should handle supabase errors in findByTags', async () => {
+      mockSupabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          overlaps: vi.fn().mockResolvedValue({
+            data: null,
+            error: { message: 'Search failed' }
+          })
+        })
+      });
+
+      await expect(service.findByTags(['write-unit-test']))
+        .rejects.toThrow('Failed to search templates by tags: Search failed');
+    });
+  });
 });
