@@ -22,3 +22,8 @@ export function formatDetailedDate(dateString: string) {
     minute: '2-digit'
   });
 }
+
+export function generateTimestamps() {
+  const now = new Date().toISOString();
+  return { created_at: now, updated_at: now };
+}

@@ -2,13 +2,14 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import NotFound from './NotFound';
+import { logger } from '@/lib/logger';
 
-// Mock console.error to test error logging
-const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+// Mock logger.error to test error logging
+const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
 describe('NotFound', () => {
   beforeEach(() => {
-    consoleSpy.mockClear();
+    loggerSpy.mockClear();
   });
 
   it('renders 404 error page with correct content', () => {
@@ -43,7 +44,7 @@ describe('NotFound', () => {
       </MemoryRouter>
     );
     
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(loggerSpy).toHaveBeenCalledWith(
       '404 Error: User attempted to access non-existent route:',
       testPath
     );
@@ -58,7 +59,7 @@ describe('NotFound', () => {
       </MemoryRouter>
     );
     
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(loggerSpy).toHaveBeenCalledWith(
       '404 Error: User attempted to access non-existent route:',
       testPath
     );
@@ -89,12 +90,12 @@ describe('NotFound', () => {
       </MemoryRouter>
     );
     
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(loggerSpy).toHaveBeenCalledWith(
       '404 Error: User attempted to access non-existent route:',
       '/first-path'
     );
-    
-    consoleSpy.mockClear();
+
+    loggerSpy.mockClear();
     
     // Second render with different path
     render(
@@ -103,7 +104,7 @@ describe('NotFound', () => {
       </MemoryRouter>
     );
     
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(loggerSpy).toHaveBeenCalledWith(
       '404 Error: User attempted to access non-existent route:',
       '/second-path'
     );

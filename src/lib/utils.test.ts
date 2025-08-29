@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn } from './utils';
+import { cn, generateTimestamps } from './utils';
 
 describe('cn utility function', () => {
   it('joins class names correctly', () => {
@@ -12,5 +12,13 @@ describe('cn utility function', () => {
 
   it('returns empty string when no inputs are provided', () => {
     expect(cn()).toBe('');
+  });
+});
+
+describe('generateTimestamps', () => {
+  it('returns matching ISO timestamps', () => {
+    const { created_at, updated_at } = generateTimestamps();
+    expect(created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(updated_at).toBe(created_at);
   });
 });
