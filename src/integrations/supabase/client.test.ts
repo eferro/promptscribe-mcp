@@ -1,17 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from './client';
-
-// Mock localStorage for testing
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-});
+import { cookieStorage } from './cookieStorage';
 
 describe('Supabase Client', () => {
   beforeEach(() => {
@@ -40,7 +29,7 @@ describe('Supabase Client', () => {
 
   it('has database query methods available', () => {
     expect(typeof supabase.from).toBe('function');
-    
+
     // Test that from returns an object with query methods
     const query = supabase.from('prompt_templates');
     expect(query.select).toBeDefined();
@@ -49,10 +38,12 @@ describe('Supabase Client', () => {
     expect(query.delete).toBeDefined();
   });
 
-  it('uses localStorage for auth persistence', () => {
-    // This tests that the client was configured with localStorage
-    // The actual persistence is handled internally by Supabase
-    expect(supabase).toBeDefined();
+  it('uses cookie-based storage for auth persistence', () => {
+    const storage = (supabase.auth as Record<string, unknown>)['storage'];
+    expect(storage).toBe(cookieStorage);
+    expect(typeof (storage as Storage).getItem).toBe('function');
+    expect(typeof (storage as Storage).setItem).toBe('function');
+    expect(typeof (storage as Storage).removeItem).toBe('function');
   });
 
   it('supports auth state changes', () => {
