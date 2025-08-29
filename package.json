@@ -12,7 +12,17 @@
     "preview": "vite preview",
     "preview:prod": "vite build --mode production && vite preview --base /promptscribe-mcp/",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset --db-url \"$SUPABASE_DB_URL\"",
+    "db:pull": "supabase db pull --db-url \"$SUPABASE_DB_URL\"",
+    "db:push": "supabase db push --db-url \"$SUPABASE_DB_URL\"",
+    "db:migration": "supabase migration new",
+    "db:status": "supabase status",
+    "db:list": "supabase migration list --db-url \"$SUPABASE_DB_URL\"",
+    "db:fix": "./fix-migrations.sh",
+    "db:test": "./test-migrations.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
