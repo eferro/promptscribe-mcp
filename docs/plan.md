@@ -22,7 +22,7 @@
    - Separate create and update validation into distinct functions
 8. [ ] Remove legacy `TemplateData` interface
    - Delete interface and update related code and types
-9. [ ] Add tests for `findByTags`
+9. [x] Add tests for `findByTags`
    - Verify correct filtering and error handling
 10. [ ] Replace `console.error` with structured logging
    - Implement configurable logging utility
