@@ -143,14 +143,14 @@
         - Data recovery procedures
 
 17. [ ] Fix username change functionality implementation
-    17.1. [ ] Fix UsernameChangeForm component issues
+    17.1. [x] Fix UsernameChangeForm component issues
         - PROBLEM: Component expects currentUsername but service needs userId
         - Update UsernameChangeForm.tsx to accept user object instead of currentUsername
         - Fix handleSubmit to pass user.id to UserProfileService.updateUsername
         - Add proper error handling for username conflicts
         - Ensure form validates username format (3-20 chars, alphanumeric + underscore/hyphen)
     
-    17.2. [ ] Fix UserProfileService.updateUsername method
+    17.2. [x] Fix UserProfileService.updateUsername method
         - PROBLEM: Method signature expects (userId, newUsername) but component passes (currentUsername, newUsername)  
         - Verify method correctly checks username availability with excludeUserId
         - Ensure proper error messages are returned for conflicts

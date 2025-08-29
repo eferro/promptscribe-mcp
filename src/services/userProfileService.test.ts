@@ -127,30 +127,40 @@ describe('UserProfileService', () => {
         username: 'newusername'
       };
 
-      // Mock username availability check
-      vi.mocked(handleRequest).mockResolvedValueOnce({ data: null, error: null }); // Username available
-      vi.mocked(handleRequest).mockResolvedValueOnce({ data: mockProfile, error: null }); // Update successful
+      const availabilitySpy = vi
+        .spyOn(UserProfileService, 'isUsernameAvailable')
+        .mockResolvedValue({ data: true, error: null });
+      const updateSpy = vi
+        .spyOn(UserProfileService, 'updateProfile')
+        .mockResolvedValue({ data: mockProfile, error: null });
 
       const result = await UserProfileService.updateUsername('user-123', 'newusername');
 
+      expect(availabilitySpy).toHaveBeenCalledWith('newusername', 'user-123');
+      expect(updateSpy).toHaveBeenCalledWith('user-123', { username: 'newusername' });
       expect(result).toEqual({ data: mockProfile, error: null });
+
+      availabilitySpy.mockRestore();
+      updateSpy.mockRestore();
     });
 
     it('should reject username update when already taken by another user', async () => {
-      const existingProfile = {
-        id: 'profile-456',
-        user_id: 'other-user',
-        username: 'newusername'
-      };
-
-      vi.mocked(handleRequest).mockResolvedValueOnce({ data: existingProfile, error: null });
+      const availabilitySpy = vi
+        .spyOn(UserProfileService, 'isUsernameAvailable')
+        .mockResolvedValue({ data: false, error: null });
+      const updateSpy = vi.spyOn(UserProfileService, 'updateProfile');
 
       const result = await UserProfileService.updateUsername('user-123', 'newusername');
 
+      expect(availabilitySpy).toHaveBeenCalledWith('newusername', 'user-123');
+      expect(updateSpy).not.toHaveBeenCalled();
       expect(result).toEqual({
         data: null,
         error: { message: 'Username is already taken' }
       });
+
+      availabilitySpy.mockRestore();
+      updateSpy.mockRestore();
     });
 
     it('should allow user to keep their current username during update', async () => {
@@ -160,12 +170,53 @@ describe('UserProfileService', () => {
         username: 'currentusername'
       };
 
-      vi.mocked(handleRequest).mockResolvedValueOnce({ data: currentProfile, error: null });
-      vi.mocked(handleRequest).mockResolvedValueOnce({ data: currentProfile, error: null });
+      const availabilitySpy = vi
+        .spyOn(UserProfileService, 'isUsernameAvailable')
+        .mockResolvedValue({ data: true, error: null });
+      const updateSpy = vi
+        .spyOn(UserProfileService, 'updateProfile')
+        .mockResolvedValue({ data: currentProfile, error: null });
 
       const result = await UserProfileService.updateUsername('user-123', 'currentusername');
 
       expect(result).toEqual({ data: currentProfile, error: null });
+
+      availabilitySpy.mockRestore();
+      updateSpy.mockRestore();
+    });
+
+    it('should return error for empty username', async () => {
+      const availabilitySpy = vi.spyOn(UserProfileService, 'isUsernameAvailable');
+      const updateSpy = vi.spyOn(UserProfileService, 'updateProfile');
+
+      const result = await UserProfileService.updateUsername('user-123', '');
+
+      expect(availabilitySpy).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        data: null,
+        error: { message: 'Username is required' }
+      });
+
+      availabilitySpy.mockRestore();
+      updateSpy.mockRestore();
+    });
+
+    it('should return error for invalid username format', async () => {
+      const availabilitySpy = vi.spyOn(UserProfileService, 'isUsernameAvailable');
+      const updateSpy = vi.spyOn(UserProfileService, 'updateProfile');
+
+      const result = await UserProfileService.updateUsername('user-123', 'invalid!');
+
+      expect(availabilitySpy).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        data: null,
+        error: { message: 'Invalid username format' }
+      });
+
+      availabilitySpy.mockRestore();
+      updateSpy.mockRestore();
     });
   });
 

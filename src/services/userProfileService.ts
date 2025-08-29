@@ -68,16 +68,42 @@ export class UserProfileService {
    * Update username for a user
    */
   static async updateUsername(userId: string, newUsername: string): Promise<{ data: UserProfile | null; error: { message: string } | null }> {
-    // First check if username is available
-    const { data: existingProfile } = await this.getProfileByUsername(newUsername);
-    if (existingProfile && existingProfile.user_id !== userId) {
+    const username = newUsername.trim();
+
+    if (!username) {
+      return {
+        data: null,
+        error: { message: 'Username is required' }
+      };
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return {
+        data: null,
+        error: { message: 'Username must be between 3 and 20 characters' }
+      };
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return {
+        data: null,
+        error: { message: 'Invalid username format' }
+      };
+    }
+
+    const { data: available, error } = await this.isUsernameAvailable(username, userId);
+    if (error) {
+      return { data: null, error };
+    }
+
+    if (!available) {
       return {
         data: null,
         error: { message: 'Username is already taken' }
       };
     }
 
-    return this.updateProfile(userId, { username: newUsername });
+    return this.updateProfile(userId, { username });
   }
 
   /**

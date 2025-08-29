@@ -36,7 +36,7 @@ vi.mock('@/services/userProfileService', async () => {
 describe('UsernameChangeForm', () => {
   const mockOnUsernameChanged = vi.fn();
   const mockOnCancel = vi.fn();
-  const currentUsername = 'testuser';
+  const mockUser = { id: 'user-123', username: 'testuser' };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,14 +47,14 @@ describe('UsernameChangeForm', () => {
   it('renders with current username', () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
     );
 
     expect(screen.getByText('Change Username')).toBeInTheDocument();
-    expect(screen.getByDisplayValue(currentUsername)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(mockUser.username)).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter new username')).toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -80,7 +80,7 @@ describe('UsernameChangeForm', () => {
   it('validates username length', async () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -97,7 +97,7 @@ describe('UsernameChangeForm', () => {
   it('validates username format', async () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -114,14 +114,14 @@ describe('UsernameChangeForm', () => {
   it('prevents submission with same username', async () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
     );
 
     const newUsernameInput = screen.getByPlaceholderText('Enter new username');
-    fireEvent.change(newUsernameInput, { target: { value: currentUsername } });
+    fireEvent.change(newUsernameInput, { target: { value: mockUser.username } });
 
     const submitButton = screen.getByText('Update Username');
     fireEvent.click(submitButton);
@@ -137,7 +137,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -157,7 +157,7 @@ describe('UsernameChangeForm', () => {
   it('prevents submission with invalid username format', async () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -183,7 +183,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -201,7 +201,7 @@ describe('UsernameChangeForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith(currentUsername, newUsername);
+      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith(mockUser.id, newUsername);
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Username updated',
         description: 'Your username has been successfully changed'
@@ -219,7 +219,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -250,7 +250,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -279,7 +279,7 @@ describe('UsernameChangeForm', () => {
   it('calls onCancel when cancel button is clicked', () => {
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -299,7 +299,7 @@ describe('UsernameChangeForm', () => {
 
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -324,7 +324,7 @@ describe('UsernameChangeForm', () => {
     
     render(
       <UsernameChangeForm
-        currentUsername={currentUsername}
+        user={mockUser}
         onUsernameChanged={mockOnUsernameChanged}
         onCancel={mockOnCancel}
       />
@@ -340,7 +340,7 @@ describe('UsernameChangeForm', () => {
     
     // Wait for debounce
     await waitFor(() => {
-      expect(mockUserProfileService.isUsernameAvailable).toHaveBeenCalledWith('newuser');
+      expect(mockUserProfileService.isUsernameAvailable).toHaveBeenCalledWith('newuser', mockUser.id);
     }, { timeout: 1000 });
   });
 });
