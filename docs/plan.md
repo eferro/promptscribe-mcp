@@ -9,7 +9,7 @@
 3. [x] Reactivate critical lint rules
    - Enable `@typescript-eslint/no-unused-vars`
    - Remove unused variables across the codebase
-4. [ ] Introduce secure session storage
+4. [x] Introduce secure session storage
    - Migrate Supabase token storage from `localStorage` to HTTP-only cookies or similar
    - Update Supabase client and adjust affected tests
 5. [ ] Refactor `AuthForm` component
