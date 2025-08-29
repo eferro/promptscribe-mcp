@@ -69,16 +69,18 @@
         - Add real-time username availability checking
         - Add username validation and error messages
         - Update form submission to include username
-    13.2. [x] Create UsernameChangeForm component
+    13.2. [~] Create UsernameChangeForm component (NEEDS FIXES)
         - Form for changing username
         - Username availability checking
         - Validation and error handling
         - Success confirmation
-    13.3. [x] Create UserProfileForm component
+        - ISSUES: Component interface mismatch with service, not integrated into UI
+    13.3. [~] Create UserProfileForm component (NEEDS CLEANUP)
         - Form for editing profile information
         - Username change integration
         - Profile picture upload (future enhancement)
         - Bio and display name fields
+        - ISSUES: Duplicate username validation logic, needs consolidation
     13.4. [x] Update DashboardHeader for username display
         - Show username instead of email
         - Add profile editing button
@@ -87,21 +89,21 @@
         - Show creator username instead of user_id
         - Add username to template metadata
 
-14. [ ] User experience and validation
-    14.1. [ ] Implement username validation rules
-        - Length constraints (3-20 characters)
-        - Character restrictions (alphanumeric, underscores, hyphens)
-        - Reserved username prevention (admin, root, etc.)
-        - Basic format validation
-    14.2. [ ] Implement username availability checking
-        - Real-time validation during typing
-        - Debounced API calls
-        - Clear availability indicators
-        - Suggested alternatives for taken usernames
-    14.3. [ ] Add username change restrictions
+14. [~] User experience and validation (PARTIALLY IMPLEMENTED)
+    14.1. [~] Implement username validation rules (NEEDS FIXES)
+        - Length constraints (3-20 characters) - IMPLEMENTED
+        - Character restrictions (alphanumeric, underscores, hyphens) - IMPLEMENTED  
+        - Reserved username prevention (admin, root, etc.) - IMPLEMENTED IN DB
+        - Basic format validation - NEEDS CONSISTENCY FIXES
+    14.2. [~] Implement username availability checking (NEEDS FIXES)
+        - Real-time validation during typing - IMPLEMENTED BUT BUGGY
+        - Debounced API calls - IMPLEMENTED
+        - Clear availability indicators - NEEDS IMPROVEMENT
+        - Suggested alternatives for taken usernames - NOT IMPLEMENTED
+    14.3. [x] Add username change restrictions
         - SKIP: Minimum time between changes (e.g., 30 days)
         - SKIP: Change limit per year
-        - Only enforce uniqueness constraint
+        - Only enforce uniqueness constraint - IMPLEMENTED
 
 15. [x] Testing and quality assurance
     15.1. [x] Unit tests for UserProfileService
@@ -140,16 +142,58 @@
         - Code rollback procedures
         - Data recovery procedures
 
-17. [ ] Documentation and user guidance
-    17.1. [ ] Update user documentation
+17. [ ] Fix username change functionality implementation
+    17.1. [ ] Fix UsernameChangeForm component issues
+        - PROBLEM: Component expects currentUsername but service needs userId
+        - Update UsernameChangeForm.tsx to accept user object instead of currentUsername
+        - Fix handleSubmit to pass user.id to UserProfileService.updateUsername
+        - Add proper error handling for username conflicts
+        - Ensure form validates username format (3-20 chars, alphanumeric + underscore/hyphen)
+    
+    17.2. [ ] Fix UserProfileService.updateUsername method
+        - PROBLEM: Method signature expects (userId, newUsername) but component passes (currentUsername, newUsername)  
+        - Verify method correctly checks username availability with excludeUserId
+        - Ensure proper error messages are returned for conflicts
+        - Test edge cases (same username, empty username, invalid format)
+    
+    17.3. [ ] Integrate UsernameChangeForm into Dashboard UI
+        - PROBLEM: UsernameChangeForm is implemented but not used anywhere
+        - Add username change option to Dashboard header profile menu
+        - Create modal or page view for username change form
+        - Update DashboardHeader component to include username change functionality
+        - Handle successful username changes (update local state, refresh profile)
+    
+    17.4. [ ] Improve UserProfileForm username handling
+        - PROBLEM: UserProfileForm.tsx has duplicate username change logic
+        - Consolidate username change logic to use single service method
+        - Remove duplicate username availability checking code
+        - Ensure consistent validation between UserProfileForm and UsernameChangeForm
+        - Fix updateProfile method call to handle username changes properly
+    
+    17.5. [ ] Verify database constraints and service validation
+        - PROBLEM: Need to confirm database unique constraints work correctly
+        - Test that multiple users cannot have the same username
+        - Verify server-side validation matches client-side validation
+        - Test username update triggers in database (for templates table)
+        - Confirm case-sensitivity handling for usernames
+    
+    17.6. [ ] Add comprehensive error handling and user feedback
+        - Add specific error messages for different username validation failures
+        - Implement loading states during username availability checks
+        - Add success animations/feedback for successful username changes
+        - Handle network errors gracefully during username operations
+        - Add username format hints and validation feedback in real-time
+
+18. [ ] Documentation and user guidance
+    18.1. [ ] Update user documentation
         - Username creation guidelines
         - Username change process
         - Profile management instructions
-    17.2. [ ] Update developer documentation
+    18.2. [ ] Update developer documentation
         - API changes documentation
         - Database schema updates
         - Component usage examples
-    17.3. [ ] Create admin documentation
+    18.3. [ ] Create admin documentation
         - Username conflict resolution
         - User profile management tools
         - Monitoring and maintenance procedures
