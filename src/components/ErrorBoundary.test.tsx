@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { ErrorBoundary } from './ErrorBoundary';
+import { logger } from '@/lib/logger';
 
 // Component that throws an error when shouldThrow is true
 function ThrowError({ shouldThrow }: { shouldThrow: boolean }) {
@@ -21,7 +22,8 @@ test('shouldRenderChildrenWhenNoError', () => {
 });
 
 test('shouldRenderErrorUIWhenChildThrowsError', () => {
-  // Suppress console.error for this test
+  // Suppress logger.error and console.error for this test
+  const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
   const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
   render(
@@ -34,10 +36,12 @@ test('shouldRenderErrorUIWhenChildThrowsError', () => {
   expect(screen.getByText("We're sorry, but something unexpected happened.")).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /reload page/i })).toBeInTheDocument();
 
+  loggerSpy.mockRestore();
   consoleSpy.mockRestore();
 });
 
 test('shouldLogErrorWhenCaught', () => {
+  const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
   const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
   render(
@@ -46,11 +50,12 @@ test('shouldLogErrorWhenCaught', () => {
     </ErrorBoundary>
   );
 
-  expect(consoleSpy).toHaveBeenCalledWith(
+  expect(loggerSpy).toHaveBeenCalledWith(
     'Error caught by boundary:',
     expect.any(Error),
     expect.any(Object)
   );
 
+  loggerSpy.mockRestore();
   consoleSpy.mockRestore();
 });

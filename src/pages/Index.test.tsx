@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import Index from './Index';
 import { getSession, onAuthStateChange, signOut } from '@/services/authService';
+import { logger } from '@/lib/logger';
 
 vi.mock('@/services/authService', () => ({
   getSession: vi.fn(),
@@ -411,8 +412,8 @@ describe('Index', () => {
     // Mock getSession to throw error (lines 30-34)
     mockGetSession.mockRejectedValue(new Error('Auth service unavailable'));
 
-    // Mock console.error to verify error logging
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Mock logger.error to verify error logging
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     render(
       <IndexWrapper>
@@ -422,7 +423,7 @@ describe('Index', () => {
 
     // Should log auth initialization error and still set loading to false
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         'Auth initialization error:',
         expect.any(Error)
       );
@@ -433,7 +434,7 @@ describe('Index', () => {
       expect(screen.getByTestId('auth-form')).toBeInTheDocument();
     });
 
-    consoleSpy.mockRestore();
+    loggerSpy.mockRestore();
   });
 
   it('handles auth success callback correctly', async () => {
@@ -464,8 +465,8 @@ describe('Index', () => {
       error: { message: 'Invalid refresh token', code: '401' }
     });
 
-    // Mock console.error to verify error logging
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Mock logger.error to verify error logging
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     render(
       <IndexWrapper>
@@ -475,7 +476,7 @@ describe('Index', () => {
 
     // Should log the supabase error and handle gracefully
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         'Auth initialization error:',
         expect.objectContaining({ message: 'Invalid refresh token' })
       );
@@ -486,6 +487,6 @@ describe('Index', () => {
       expect(screen.getByTestId('auth-form')).toBeInTheDocument();
     });
 
-    consoleSpy.mockRestore();
+    loggerSpy.mockRestore();
   });
 });

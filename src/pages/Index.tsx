@@ -5,6 +5,7 @@ import AuthForm from "@/components/auth/AuthForm";
 // Lazy load Dashboard to reduce initial bundle size
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
+import { logger } from '@/lib/logger';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -29,7 +30,7 @@ const Index = () => {
           setLoading(false);
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        logger.error('Auth initialization error:', error);
         if (isMounted) {
           setLoading(false);
         }

@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Template, validateTemplate } from '../types/template';
+import { Template, validateNewTemplate, validateTemplateUpdate } from '../types/template';
+import { generateTimestamps } from '@/lib/utils';
 import { TaskTag } from '../types/tags';
 
 // Database row type for template data
@@ -37,10 +38,12 @@ export class TemplateService {
 
   async create(templateData: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>): Promise<Template> {
     // Validate first
-    const errors = validateTemplate(templateData);
+    const errors = validateNewTemplate(templateData);
     if (errors.length > 0) {
       throw new Error(errors.join(', '));
     }
+
+    const { created_at, updated_at } = generateTimestamps();
 
     const payload = {
       name: templateData.name,
@@ -52,8 +55,8 @@ export class TemplateService {
       user_id: templateData.userId,
       is_public: templateData.isPublic,
       tags: templateData.tags || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      created_at,
+      updated_at
       // Note: created_by_username will be automatically populated by database trigger
     };
 
@@ -109,13 +112,14 @@ export class TemplateService {
 
   async update(id: string, updates: Partial<Template>): Promise<Template> {
     // Validate updates
-    const errors = validateTemplate(updates, true);
+    const errors = validateTemplateUpdate(updates);
     if (errors.length > 0) {
       throw new Error(errors.join(', '));
     }
 
+    const { updated_at } = generateTimestamps();
     const payload: TemplateUpdatePayload = {
-      updated_at: new Date().toISOString()
+      updated_at
     };
 
     // Only include fields that are being updated

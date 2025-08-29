@@ -26,17 +26,14 @@ export interface Template {
   tags?: TaskTag[];
 }
 
-// Legacy interface for database mapping - will be removed in next phase
-export interface TemplateData {
-  arguments?: TemplateArgument[];
-  messages?: TemplateMessage[];
-}
-
 export interface MCPTemplate {
   id: string;
   name: string;
   description: string | null;
-  template_data: TemplateData | null;
+  template_data: {
+    messages: TemplateMessage[];
+    arguments: TemplateArgument[];
+  } | null;
   is_public: boolean;
   created_at: string;
   updated_at: string;
@@ -45,50 +42,52 @@ export interface MCPTemplate {
 }
 
 // Simple validation function
-export function validateTemplate(template: Partial<Template>, isUpdate = false): string[] {
+export function validateNewTemplate(template: Partial<Template>): string[] {
   const errors: string[] = [];
-  
-  if (isUpdate) {
-    // For updates, only validate fields that are being set
-    if ('name' in template) {
-      if (!template.name?.trim()) {
-        errors.push('Name is required');
-      }
-      
-      if (template.name && template.name.length > 100) {
-        errors.push('Name cannot exceed 100 characters');
-      }
-    }
-    
-    if ('messages' in template) {
-      if (!template.messages || template.messages.length === 0) {
-        errors.push('At least one message is required');
-      }
-    }
-    
-    if ('tags' in template) {
-      if (template.tags && template.tags.length > 5) {
-        errors.push('Maximum 5 tags allowed per template');
-      }
-    }
-  } else {
-    // For create operations, validate all required fields
+
+  if (!template.name?.trim()) {
+    errors.push('Name is required');
+  }
+
+  if (template.name && template.name.length > 100) {
+    errors.push('Name cannot exceed 100 characters');
+  }
+
+  if (!template.messages || template.messages.length === 0) {
+    errors.push('At least one message is required');
+  }
+
+  if (template.tags && template.tags.length > 5) {
+    errors.push('Maximum 5 tags allowed per template');
+  }
+
+  return errors;
+}
+
+export function validateTemplateUpdate(template: Partial<Template>): string[] {
+  const errors: string[] = [];
+
+  if ('name' in template) {
     if (!template.name?.trim()) {
       errors.push('Name is required');
     }
-    
+
     if (template.name && template.name.length > 100) {
       errors.push('Name cannot exceed 100 characters');
     }
-    
+  }
+
+  if ('messages' in template) {
     if (!template.messages || template.messages.length === 0) {
       errors.push('At least one message is required');
     }
-    
+  }
+
+  if ('tags' in template) {
     if (template.tags && template.tags.length > 5) {
       errors.push('Maximum 5 tags allowed per template');
     }
   }
-  
+
   return errors;
 }
