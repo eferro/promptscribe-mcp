@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { UserProfile } from '@/integrations/supabase/types';
+import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
+import { isValidUsername, MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH, USERNAME_REGEX } from '@/lib/username';
 
 interface UserProfileFormProps {
   profile: UserProfile;
@@ -25,58 +27,24 @@ export default function UserProfileForm({
     avatarUrl: profile.avatar_url || ''
   });
   const [loading, setLoading] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
-  const [checkingUsername, setCheckingUsername] = useState(false);
+  const { usernameAvailable, checkingUsername } = useUsernameAvailability(
+    formData.username,
+    profile.user_id,
+    profile.username
+  );
   const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
 
   // Check if form has changes
   useEffect(() => {
-    const changed = 
+    const changed =
       formData.username !== profile.username ||
       formData.displayName !== (profile.display_name || '') ||
       formData.bio !== (profile.bio || '') ||
       formData.avatarUrl !== (profile.avatar_url || '');
-    
+
     setHasChanges(changed);
   }, [formData, profile]);
-
-  // Check username availability with debouncing
-  const checkUsernameAvailability = React.useCallback(async (usernameToCheck: string) => {
-    if (usernameToCheck.length < 3) {
-      setUsernameAvailable(null);
-      return;
-    }
-
-    if (usernameToCheck === profile.username) {
-      setUsernameAvailable(true);
-      return;
-    }
-
-    setCheckingUsername(true);
-    try {
-      const { UserProfileService } = await import('@/services/userProfileService');
-      const { data: isAvailable } = await UserProfileService.isUsernameAvailable(usernameToCheck);
-      setUsernameAvailable(isAvailable);
-    } catch {
-      setUsernameAvailable(null);
-    } finally {
-      setCheckingUsername(false);
-    }
-  }, [profile.username]);
-
-  // Debounced username check
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (formData.username.trim()) {
-        checkUsernameAvailability(formData.username.trim());
-      } else {
-        setUsernameAvailable(null);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [formData.username, profile.username, checkUsernameAvailability]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({
@@ -97,11 +65,11 @@ export default function UserProfileForm({
       return;
     }
 
-    if (formData.username.trim().length < 3) {
+    if (formData.username.trim().length < MIN_USERNAME_LENGTH) {
       toast({
         variant: "destructive",
         title: "Username too short",
-        description: "Username must be at least 3 characters long"
+        description: `Username must be at least ${MIN_USERNAME_LENGTH} characters long`
       });
       return;
     }
@@ -119,11 +87,28 @@ export default function UserProfileForm({
 
     try {
       const { UserProfileService } = await import('@/services/userProfileService');
-      
-      const updates: Partial<UserProfile> = {} as Partial<UserProfile>;
+
+      let currentProfile: UserProfile | null = null;
+
       if (formData.username !== profile.username) {
-        updates.username = formData.username.trim();
+        const { data, error } = await UserProfileService.updateUsername(
+          profile.user_id,
+          formData.username.trim()
+        );
+
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Profile update failed",
+            description: error.message
+          });
+          return;
+        }
+
+        currentProfile = data;
       }
+
+      const updates: Partial<UserProfile> = {} as Partial<UserProfile>;
       if (formData.displayName !== (profile.display_name || '')) {
         updates.display_name = formData.displayName.trim() || null;
       }
@@ -134,20 +119,30 @@ export default function UserProfileForm({
         updates.avatar_url = formData.avatarUrl.trim() || null;
       }
 
-      const { data: updatedProfile, error } = await UserProfileService.updateProfile(profile.user_id, updates);
+      if (Object.keys(updates).length > 0) {
+        const { data, error } = await UserProfileService.updateProfile(
+          profile.user_id,
+          updates
+        );
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Profile update failed",
-          description: error.message
-        });
-      } else if (updatedProfile) {
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Profile update failed",
+            description: error.message
+          });
+          return;
+        }
+
+        currentProfile = data;
+      }
+
+      if (currentProfile) {
         toast({
           title: "Profile updated",
           description: "Your profile has been successfully updated"
         });
-        onProfileUpdated(updatedProfile);
+        onProfileUpdated(currentProfile);
       }
     } catch {
       toast({
@@ -160,10 +155,6 @@ export default function UserProfileForm({
     }
   };
 
-  const isValidUsername = (username: string) => {
-    return /^[a-zA-Z0-9_-]+$/.test(username);
-  };
-
   const handleReset = () => {
     setFormData({
       username: profile.username,
@@ -171,7 +162,6 @@ export default function UserProfileForm({
       bio: profile.bio || '',
       avatarUrl: profile.avatar_url || ''
     });
-    setUsernameAvailable(null);
   };
 
   return (
@@ -194,9 +184,9 @@ export default function UserProfileForm({
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 required
-                minLength={3}
-                maxLength={20}
-                pattern="[a-zA-Z0-9_-]+"
+                minLength={MIN_USERNAME_LENGTH}
+                maxLength={MAX_USERNAME_LENGTH}
+                pattern={USERNAME_REGEX.source}
                 title="Username can only contain letters, numbers, underscores, and hyphens"
               />
               {formData.username.length > 0 && (
@@ -207,8 +197,8 @@ export default function UserProfileForm({
                     <span className="text-green-600">✓ Username available</span>
                   ) : usernameAvailable === false ? (
                     <span className="text-red-600">✗ Username already taken</span>
-                  ) : formData.username.length < 3 ? (
-                    <span className="text-muted-foreground">Username must be at least 3 characters</span>
+                  ) : formData.username.length < MIN_USERNAME_LENGTH ? (
+                    <span className="text-muted-foreground">Username must be at least {MIN_USERNAME_LENGTH} characters</span>
                   ) : !isValidUsername(formData.username) ? (
                     <span className="text-red-600">✗ Invalid characters</span>
                   ) : null}

@@ -16,11 +16,11 @@ vi.mock('@/hooks/useServices', () => ({
   useTemplateService: vi.fn(() => mockTemplateService),
 }));
 
-const mockUserProfileService = {
+const mockUserProfileService = vi.hoisted(() => ({
   getProfileByUserId: vi.fn(),
   isUsernameAvailable: vi.fn(),
   updateUsername: vi.fn(),
-};
+}));
 
 vi.mock('@/services/userProfileService', () => ({
   UserProfileService: mockUserProfileService,

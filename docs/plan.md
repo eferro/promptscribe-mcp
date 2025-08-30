@@ -163,7 +163,7 @@
         - Update DashboardHeader component to include username change functionality
         - Handle successful username changes (update local state, refresh profile)
     
-    17.4. [ ] Improve UserProfileForm username handling
+    17.4. [x] Improve UserProfileForm username handling
         - PROBLEM: UserProfileForm.tsx has duplicate username change logic
         - Consolidate username change logic to use single service method
         - Remove duplicate username availability checking code
