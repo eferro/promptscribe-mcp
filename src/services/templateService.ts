@@ -175,6 +175,7 @@ export class TemplateService {
       arguments: row.template_data?.arguments || [],
       isPublic: row.is_public,
       userId: row.user_id,
+      createdByUsername: row.created_by_username || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       tags: row.tags ? row.tags as TaskTag[] : undefined
