@@ -30,3 +30,7 @@ dist-ssr
 .env.*.local
 .serena/
 supabase/.temp/
+
+# Playwright
+playwright-report/
+test-results/
