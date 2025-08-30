@@ -15,6 +15,7 @@ import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
 import { Template, MCPTemplate } from '@/types/template';
 import { TaskTag, ALL_TASK_TAGS } from '@/types/tags';
+import { UserProfileService } from '@/services/userProfileService';
 import { UserProfile } from '@/integrations/supabase/types';
 
 interface DashboardProps {
@@ -41,6 +42,28 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   const { toast } = useToast();
   const templateService = useTemplateService();
   
+  // Fetch user profile function
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const { data: profile, error } = await UserProfileService.getProfileByUserId(user.id);
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message
+        });
+      } else if (profile) {
+        setUserProfile(profile);
+      }
+    } catch (error: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to load user profile"
+      });
+    }
+  }, [user.id, toast]);
+
   // Fetch templates function
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
@@ -88,25 +111,9 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   }, [textFilteredPublicTemplates, selectedTagFilter]);
 
   useEffect(() => {
+    fetchUserProfile();
     fetchTemplates();
-  }, [fetchTemplates]);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const { UserProfileService } = await import('@/services/userProfileService');
-        const { data } = await UserProfileService.getProfileByUserId(user.id);
-        if (data) setUserProfile(data);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load profile"
-        });
-      }
-    };
-    loadProfile();
-  }, [user.id, toast]);
+  }, [fetchUserProfile, fetchTemplates]);
 
   const handleCreateNew = () => {
     setSelectedTemplate(null);

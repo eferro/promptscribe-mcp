@@ -1,16 +1,32 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { getSession, onAuthStateChange, signOut } from "@/services/authService";
+import { getSession, onAuthStateChange, signOut, createUserProfileAfterConfirmation } from "@/services/authService";
 import AuthForm from "@/components/auth/AuthForm";
 // Lazy load Dashboard to reduce initial bundle size
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 import PasswordChangeForm from "@/components/auth/PasswordChangeForm";
 import { logger } from '@/lib/logger';
+import { UserProfileService } from "@/services/userProfileService";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+
+  // Ensure user has a profile, create one if it doesn't exist
+  const ensureUserProfile = async (currentUser: User) => {
+    try {
+      // Check if profile exists
+      const { data: profile, error } = await UserProfileService.getProfileByUserId(currentUser.id);
+      
+      // If no profile exists, create one
+      if (!profile && !error) {
+        await createUserProfileAfterConfirmation(currentUser.id, currentUser.email || '');
+      }
+    } catch (error) {
+      logger.error('Error ensuring user profile:', error);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -26,7 +42,14 @@ const Index = () => {
         if (error) throw error;
 
         if (isMounted) {
-          setUser(data?.session?.user ?? null);
+          const sessionUser = data?.session?.user ?? null;
+          setUser(sessionUser);
+          
+          // Ensure user profile exists if we have a user
+          if (sessionUser) {
+            await ensureUserProfile(sessionUser);
+          }
+          
           setLoading(false);
         }
       } catch (error) {
@@ -52,9 +75,16 @@ const Index = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (isMounted) {
-          setUser(session?.user ?? null);
+          const sessionUser = session?.user ?? null;
+          setUser(sessionUser);
+          
+          // Ensure user profile exists if we have a user
+          if (sessionUser) {
+            await ensureUserProfile(sessionUser);
+          }
+          
           setLoading(false);
         }
 
