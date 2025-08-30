@@ -10,17 +10,19 @@ import DeleteConfirmDialog from "@/components/templates/DeleteConfirmDialog";
 import { DashboardHeader } from "@/components/Dashboard/DashboardHeader";
 import { TemplateGrid } from "@/components/Dashboard/TemplateGrid";
 import { TemplateSearch } from "@/components/Dashboard/TemplateSearch";
+import UsernameChangeForm from "@/components/auth/UsernameChangeForm";
 import { useTemplateSearch } from "@/hooks/useTemplateSearch";
 import { User } from '@supabase/supabase-js';
 import { Template, MCPTemplate } from '@/types/template';
 import { TaskTag, ALL_TASK_TAGS } from '@/types/tags';
+import { UserProfile } from '@/integrations/supabase/types';
 
 interface DashboardProps {
   user: User;
   onSignOut: () => void;
 }
 
-type ViewMode = 'dashboard' | 'editor' | 'viewer';
+type ViewMode = 'dashboard' | 'editor' | 'viewer' | 'change-username';
 
 export default function Dashboard({ user, onSignOut }: DashboardProps) {
   // Essential state only
@@ -30,6 +32,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   // Data fetching and services
   const [myTemplates, setMyTemplates] = useState<Template[]>([]);
@@ -87,6 +90,23 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { UserProfileService } = await import('@/services/userProfileService');
+        const { data } = await UserProfileService.getProfileByUserId(user.id);
+        if (data) setUserProfile(data);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load profile"
+        });
+      }
+    };
+    loadProfile();
+  }, [user.id, toast]);
 
   const handleCreateNew = () => {
     setSelectedTemplate(null);
@@ -189,9 +209,30 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
     );
   }
 
+  if (viewMode === 'change-username') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <UsernameChangeForm
+          user={{ id: user.id, username: userProfile?.username || '' }}
+          onUsernameChanged={(newUsername) => {
+            setUserProfile(prev => prev ? { ...prev, username: newUsername } : prev);
+            setViewMode('dashboard');
+          }}
+          onCancel={() => setViewMode('dashboard')}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader user={user} onSignOut={onSignOut} onCreateNew={handleCreateNew} />
+      <DashboardHeader
+        user={user}
+        userProfile={userProfile || undefined}
+        onSignOut={onSignOut}
+        onCreateNew={handleCreateNew}
+        onChangeUsername={() => setViewMode('change-username')}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">

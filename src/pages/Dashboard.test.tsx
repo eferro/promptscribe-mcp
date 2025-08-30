@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from './Dashboard';
 
@@ -13,6 +14,16 @@ const mockTemplateService = {
 
 vi.mock('@/hooks/useServices', () => ({
   useTemplateService: vi.fn(() => mockTemplateService),
+}));
+
+const mockUserProfileService = {
+  getProfileByUserId: vi.fn(),
+  isUsernameAvailable: vi.fn(),
+  updateUsername: vi.fn(),
+};
+
+vi.mock('@/services/userProfileService', () => ({
+  UserProfileService: mockUserProfileService,
 }));
 
 // Mock the toast hook
@@ -99,6 +110,9 @@ describe('Dashboard', () => {
     mockTemplateService.findByUser.mockResolvedValue([mockTemplate]);
     mockTemplateService.findPublic.mockResolvedValue([mockTemplate]);
     mockTemplateService.delete.mockResolvedValue(undefined);
+    mockUserProfileService.getProfileByUserId.mockResolvedValue({ data: null, error: null });
+    mockUserProfileService.isUsernameAvailable.mockResolvedValue({ data: true, error: null });
+    mockUserProfileService.updateUsername.mockResolvedValue({ data: { username: 'newuser' }, error: null });
   });
 
   it('renders dashboard header with user email', async () => {
@@ -303,5 +317,32 @@ describe('Dashboard', () => {
         description: "Network timeout",
       });
     });
+  });
+
+  it('shows username change form when triggered', async () => {
+    const profile = {
+      id: 'profile-1',
+      user_id: mockUser.id,
+      username: 'olduser',
+      display_name: null,
+      bio: null,
+      avatar_url: null,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    mockUserProfileService.getProfileByUserId.mockResolvedValue({ data: profile, error: null });
+
+    render(<Dashboard user={mockUser} onSignOut={mockOnSignOut} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('@olduser')).toBeInTheDocument();
+    });
+
+    const user = userEvent.setup();
+    const profileBtn = screen.getByRole('button', { name: /profile/i });
+    await user.click(profileBtn);
+    await user.click(await screen.findByText('Change Username'));
+
+    expect(screen.getByText('Change Username')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, LogOut, User as UserIcon } from "lucide-react";
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '@/integrations/supabase/types';
@@ -9,9 +10,10 @@ interface DashboardHeaderProps {
   onSignOut: () => void;
   onCreateNew: () => void;
   onEditProfile?: () => void;
+  onChangeUsername?: () => void;
 }
 
-export function DashboardHeader({ user, userProfile, onSignOut, onCreateNew, onEditProfile }: DashboardHeaderProps) {
+export function DashboardHeader({ user, userProfile, onSignOut, onCreateNew, onEditProfile, onChangeUsername }: DashboardHeaderProps) {
   const displayName = userProfile?.display_name || userProfile?.username || user.email?.split('@')[0] || 'User';
   
   return (
@@ -35,11 +37,23 @@ export function DashboardHeader({ user, userProfile, onSignOut, onCreateNew, onE
               <Plus className="w-4 h-4 mr-2" />
               New Template
             </Button>
-            {onEditProfile && (
-              <Button variant="outline" onClick={onEditProfile}>
-                <UserIcon className="w-4 h-4 mr-2" />
-                Profile
-              </Button>
+            {(onEditProfile || onChangeUsername) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <UserIcon className="w-4 h-4 mr-2" />
+                    Profile
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEditProfile && (
+                    <DropdownMenuItem onClick={onEditProfile}>Edit Profile</DropdownMenuItem>
+                  )}
+                  {onChangeUsername && (
+                    <DropdownMenuItem onClick={onChangeUsername}>Change Username</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="outline" onClick={onSignOut}>
               <LogOut className="w-4 h-4 mr-2" />

@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DashboardHeader } from './DashboardHeader';
 
@@ -99,34 +100,60 @@ describe('DashboardHeader', () => {
     expect(screen.getByText('@testuser')).toBeInTheDocument();
   });
 
-  it('should show profile button when onEditProfile is provided', () => {
+  it('should trigger onEditProfile from profile menu', async () => {
     const mockOnEditProfile = vi.fn();
-    
+
     render(
-      <DashboardHeader 
-        user={mockUser} 
-        onSignOut={mockOnSignOut} 
+      <DashboardHeader
+        user={mockUser}
+        onSignOut={mockOnSignOut}
         onCreateNew={mockOnCreateNew}
         onEditProfile={mockOnEditProfile}
       />
     );
-    
+
     const profileButton = screen.getByRole('button', { name: /profile/i });
     expect(profileButton).toBeInTheDocument();
-    
-    fireEvent.click(profileButton);
+
+    const user = userEvent.setup();
+    await user.click(profileButton);
+    const editItem = await screen.findByText('Edit Profile');
+    await user.click(editItem);
+
     expect(mockOnEditProfile).toHaveBeenCalled();
   });
 
-  it('should not show profile button when onEditProfile is not provided', () => {
+  it('should call onChangeUsername when menu item clicked', async () => {
+    const mockOnChangeUsername = vi.fn();
+
     render(
-      <DashboardHeader 
-        user={mockUser} 
-        onSignOut={mockOnSignOut} 
+      <DashboardHeader
+        user={mockUser}
+        onSignOut={mockOnSignOut}
+        onCreateNew={mockOnCreateNew}
+        onChangeUsername={mockOnChangeUsername}
+      />
+    );
+
+    const profileButton = screen.getByRole('button', { name: /profile/i });
+    const user = userEvent.setup();
+    await user.click(profileButton);
+
+    const changeItem = await screen.findByText('Change Username');
+    await user.click(changeItem);
+
+    expect(mockOnChangeUsername).toHaveBeenCalled();
+  });
+
+  it('should not show profile button when no profile actions provided', () => {
+    render(
+      <DashboardHeader
+        user={mockUser}
+        onSignOut={mockOnSignOut}
         onCreateNew={mockOnCreateNew}
       />
     );
-    
+
     expect(screen.queryByRole('button', { name: /profile/i })).not.toBeInTheDocument();
   });
 });
