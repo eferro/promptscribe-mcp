@@ -170,12 +170,12 @@
         - Ensure consistent validation between UserProfileForm and UsernameChangeForm
         - Fix updateProfile method call to handle username changes properly
     
-    17.5. [ ] Verify database constraints and service validation
+    17.5. [~] Verify database constraints and service validation
         - PROBLEM: Need to confirm database unique constraints work correctly
         - Test that multiple users cannot have the same username
         - Verify server-side validation matches client-side validation
         - Test username update triggers in database (for templates table)
-        - Confirm case-sensitivity handling for usernames
+        - [x] Confirm case-sensitivity handling for usernames
     
     17.6. [ ] Add comprehensive error handling and user feedback
         - Add specific error messages for different username validation failures

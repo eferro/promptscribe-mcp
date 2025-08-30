@@ -11,10 +11,15 @@ export class UserProfileService {
    * Create a new user profile
    */
   static async createProfile(profile: UserProfileInsert): Promise<{ data: UserProfile | null; error: { message: string } | null }> {
+    const normalizedProfile = {
+      ...profile,
+      username: profile.username?.toLowerCase(),
+    };
+
     return handleRequest(
       supabase
         .from('user_profiles')
-        .insert(profile)
+        .insert(normalizedProfile)
         .select()
         .single(),
       'Failed to create user profile'
@@ -68,7 +73,7 @@ export class UserProfileService {
    * Update username for a user
    */
   static async updateUsername(userId: string, newUsername: string): Promise<{ data: UserProfile | null; error: { message: string } | null }> {
-    const username = newUsername.trim();
+    const username = newUsername.trim().toLowerCase();
 
     if (!username) {
       return {
@@ -111,7 +116,8 @@ export class UserProfileService {
    */
   static async isUsernameAvailable(username: string, excludeUserId?: string): Promise<{ data: boolean; error: { message: string } | null }> {
     try {
-      const { data: existingProfile } = await this.getProfileByUsername(username);
+      const normalized = username.toLowerCase();
+      const { data: existingProfile } = await this.getProfileByUsername(normalized);
       
       if (!existingProfile) {
         return { data: true, error: null };
@@ -136,7 +142,7 @@ export class UserProfileService {
    */
   static generateDefaultUsername(email: string): string {
     const baseUsername = email.split('@')[0];
-    return baseUsername.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return baseUsername.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
   }
 
   /**
