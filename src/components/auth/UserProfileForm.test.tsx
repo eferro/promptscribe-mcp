@@ -12,19 +12,15 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 // Mock UserProfileService
-const mockUserProfileService = {
+const mockUserProfileService = vi.hoisted(() => ({
   isUsernameAvailable: vi.fn(),
   updateProfile: vi.fn(),
-};
+  updateUsername: vi.fn(),
+}));
 
-// Mock dynamic import
-vi.mock('@/services/userProfileService', async () => {
-  const actual = await vi.importActual('@/services/userProfileService');
-  return {
-    ...actual,
-    UserProfileService: mockUserProfileService,
-  };
-});
+vi.mock('@/services/userProfileService', () => ({
+  UserProfileService: mockUserProfileService,
+}));
 
 describe('UserProfileForm', () => {
   const mockProfile: UserProfile = {
@@ -45,6 +41,7 @@ describe('UserProfileForm', () => {
     vi.clearAllMocks();
     mockUserProfileService.isUsernameAvailable.mockResolvedValue({ data: true, error: null });
     mockUserProfileService.updateProfile.mockResolvedValue({ data: mockProfile, error: null });
+    mockUserProfileService.updateUsername.mockResolvedValue({ data: mockProfile, error: null });
   });
 
   it('renders with profile data', () => {
@@ -170,9 +167,9 @@ describe('UserProfileForm', () => {
 
   it('handles successful profile update', async () => {
     const updatedProfile = { ...mockProfile, username: 'newuser' };
-    mockUserProfileService.updateProfile.mockResolvedValue({ 
-      data: updatedProfile, 
-      error: null 
+    mockUserProfileService.updateUsername.mockResolvedValue({
+      data: updatedProfile,
+      error: null
     });
 
     render(
@@ -195,9 +192,7 @@ describe('UserProfileForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockUserProfileService.updateProfile).toHaveBeenCalledWith('user-1', {
-        username: 'newuser'
-      });
+      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith('user-1', 'newuser');
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Profile updated',
         description: 'Your profile has been successfully updated'
@@ -208,9 +203,9 @@ describe('UserProfileForm', () => {
 
   it('handles profile update errors', async () => {
     const errorMessage = 'Profile update failed';
-    mockUserProfileService.updateProfile.mockResolvedValue({ 
-      data: null, 
-      error: { message: errorMessage } 
+    mockUserProfileService.updateUsername.mockResolvedValue({
+      data: null,
+      error: { message: errorMessage }
     });
 
     render(
@@ -233,6 +228,7 @@ describe('UserProfileForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
+      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith('user-1', 'newuser');
       expect(mockToast).toHaveBeenCalledWith({
         variant: 'destructive',
         title: 'Profile update failed',
@@ -242,7 +238,7 @@ describe('UserProfileForm', () => {
   });
 
   it('handles unexpected errors', async () => {
-    mockUserProfileService.updateProfile.mockRejectedValue(new Error('Network error'));
+    mockUserProfileService.updateUsername.mockRejectedValue(new Error('Network error'));
 
     render(
       <UserProfileForm
@@ -264,6 +260,7 @@ describe('UserProfileForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
+      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith('user-1', 'newuser');
       expect(mockToast).toHaveBeenCalledWith({
         variant: 'destructive',
         title: 'Error',
@@ -363,8 +360,34 @@ describe('UserProfileForm', () => {
     
     // Wait for debounce
     await waitFor(() => {
-      expect(mockUserProfileService.isUsernameAvailable).toHaveBeenCalledWith('newuser');
+      expect(mockUserProfileService.isUsernameAvailable).toHaveBeenCalledWith('newuser', 'user-1');
     }, { timeout: 1000 });
+  });
+
+  it('updates username using updateUsername service when changed', async () => {
+    render(
+      <UserProfileForm
+        profile={mockProfile}
+        onProfileUpdated={mockOnProfileUpdated}
+        onCancel={mockOnCancel}
+      />
+    );
+
+    const usernameInput = screen.getByDisplayValue('testuser');
+    fireEvent.change(usernameInput, { target: { value: 'newuser' } });
+
+    // Wait for availability check
+    await waitFor(() => {
+      expect(mockUserProfileService.isUsernameAvailable).toHaveBeenCalledWith('newuser', 'user-1');
+    });
+
+    const submitButton = screen.getByText('Update Profile');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockUserProfileService.updateUsername).toHaveBeenCalledWith('user-1', 'newuser');
+      expect(mockUserProfileService.updateProfile).not.toHaveBeenCalled();
+    });
   });
 
   it('only updates changed fields', async () => {

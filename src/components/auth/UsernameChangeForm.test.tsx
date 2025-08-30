@@ -11,27 +11,14 @@ vi.mock('@/hooks/use-toast', () => ({
 }));
 
 // Mock UserProfileService
-vi.mock('@/services/userProfileService', () => ({
-  UserProfileService: {
-    isUsernameAvailable: vi.fn(),
-    updateUsername: vi.fn(),
-  },
-}));
-
-// Mock the services
-const mockUserProfileService = {
+const mockUserProfileService = vi.hoisted(() => ({
   isUsernameAvailable: vi.fn(),
   updateUsername: vi.fn(),
-};
+}));
 
-// Mock dynamic import
-vi.mock('@/services/userProfileService', async () => {
-  const actual = await vi.importActual('@/services/userProfileService');
-  return {
-    ...actual,
-    UserProfileService: mockUserProfileService,
-  };
-});
+vi.mock('@/services/userProfileService', () => ({
+  UserProfileService: mockUserProfileService,
+}));
 
 describe('UsernameChangeForm', () => {
   const mockOnUsernameChanged = vi.fn();
