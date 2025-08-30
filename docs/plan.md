@@ -122,7 +122,7 @@
         - Test UsernameChangeForm validation
         - Test UserProfileForm functionality
         - Test form submission and error handling
-15.5. [ ] Integration tests for username flow
+15.5. [x] Integration tests for username flow
         - Test complete signup with profile creation
         - Test username change workflow
         - Test template creation with username
