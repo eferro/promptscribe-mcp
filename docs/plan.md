@@ -118,11 +118,11 @@
     15.3. [x] Unit tests for updated TemplateService
         - Test template creation with username
         - Test username display in templates
-    15.4. [ ] Component tests for new forms
+15.4. [x] Component tests for new forms
         - Test UsernameChangeForm validation
         - Test UserProfileForm functionality
         - Test form submission and error handling
-    15.5. [ ] Integration tests for username flow
+15.5. [ ] Integration tests for username flow
         - Test complete signup with profile creation
         - Test username change workflow
         - Test template creation with username
@@ -156,7 +156,7 @@
         - Ensure proper error messages are returned for conflicts
         - Test edge cases (same username, empty username, invalid format)
     
-    17.3. [ ] Integrate UsernameChangeForm into Dashboard UI
+    17.3. [x] Integrate UsernameChangeForm into Dashboard UI
         - PROBLEM: UsernameChangeForm is implemented but not used anywhere
         - Add username change option to Dashboard header profile menu
         - Create modal or page view for username change form
