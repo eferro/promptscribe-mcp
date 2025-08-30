@@ -232,7 +232,7 @@ export default function Dashboard({ user, onSignOut }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-testid="dashboard">
       <DashboardHeader
         user={user}
         userProfile={userProfile || undefined}
