@@ -102,6 +102,82 @@ BEGIN
 END
 $$;
 
+-- Create prompt_templates table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.prompt_templates (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  content JSONB NOT NULL,
+  is_public BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Enable Row Level Security (if not already enabled)
+ALTER TABLE public.prompt_templates ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for prompt_templates if they don't exist
+DO $$
+BEGIN
+  -- Check and create policies only if they don't exist
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'prompt_templates' AND policyname = 'Users can view their own templates') THEN
+    CREATE POLICY "Users can view their own templates" 
+    ON public.prompt_templates 
+    FOR SELECT 
+    USING (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'prompt_templates' AND policyname = 'Users can view public templates') THEN
+    CREATE POLICY "Users can view public templates" 
+    ON public.prompt_templates 
+    FOR SELECT 
+    USING (is_public = true);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'prompt_templates' AND policyname = 'Users can create their own templates') THEN
+    CREATE POLICY "Users can create their own templates" 
+    ON public.prompt_templates 
+    FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'prompt_templates' AND policyname = 'Users can update their own templates') THEN
+    CREATE POLICY "Users can update their own templates" 
+    ON public.prompt_templates 
+    FOR UPDATE 
+    USING (auth.uid() = user_id);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'prompt_templates' AND policyname = 'Users can delete their own templates') THEN
+    CREATE POLICY "Users can delete their own templates" 
+    ON public.prompt_templates 
+    FOR DELETE 
+    USING (auth.uid() = user_id);
+  END IF;
+END
+$$;
+
+-- Create or replace function to update timestamps for templates
+CREATE OR REPLACE FUNCTION public.update_prompt_templates_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+
+-- Create trigger (drop first if exists)
+DROP TRIGGER IF EXISTS update_prompt_templates_updated_at ON public.prompt_templates;
+CREATE TRIGGER update_prompt_templates_updated_at
+  BEFORE UPDATE ON public.prompt_templates
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_prompt_templates_updated_at_column();
+
+-- Create indexes for prompt_templates if they don't exist
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_user_id ON public.prompt_templates(user_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_is_public ON public.prompt_templates(is_public);
+
 -- Add created_by_username column to prompt_templates if it doesn't exist
 DO $$
 BEGIN
